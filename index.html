@@ -323,6 +323,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 
 <section class="panel" id="p-photo" hidden>
   <p class="lead">Выигрывает не словарь, а маршрут: шесть одинаковых шагов на любом фото дают связность без единой сложной конструкции. Отрепетируй шаблон на фото из телефона, потом на сценах из тренажёра по таймеру.</p>
+  <div class="row" style="margin-bottom:12px"><button class="chip trtoggle" type="button" aria-pressed="true">Транскрипция</button></div>
   <div class="grid2">
     <div class="card"><h3>Шаблон из шести шагов</h3><ol class="steps" id="photosteps"></ol></div>
     <div>
@@ -342,6 +343,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 
 <section class="panel" id="p-gram" hidden>
   <p class="lead">Весь грамматический минимум для устной части A2 — в порядке недель плана. В каждом правиле: зачем оно на экзамене, таблица, примеры и типичная ошибка. Звёздочка — пример выходит без паузы; отмеченные примеры синхронизируются вместе с остальным прогрессом.</p>
+  <div class="row" style="margin-top:8px"><button class="chip trtoggle" type="button" aria-pressed="true">Транскрипция</button></div>
   <div class="chips" id="gramchips"></div>
   <div class="card" id="gramcard"></div>
 </section>
@@ -787,12 +789,12 @@ const TR_EXC={
   "europa":"ойропа","englesch":"энглэш","technik":"тэщник","noperschaft":"нопэшафт","noperen":"нопэрэн","sproochentest":"шпрохэнтэст",
   "e":"э","en":"эн","eng":"энг","et":"эт","ech":"эщ","dech":"дэщ","mech":"мэщ","iech":"иэщ","sech":"зэщ",
   "d'accord":"дакор","merci":"мэрси","ass":"ас","dass":"дас","datt":"дат","paräis":"парэйс","spuenien":"шпуэниэн",
-  "theater":"тэатэр","der":"да","sechs":"зэкс","ursprénglech":"уршпрэнглэщ","loyer":"луайе","loyeren":"луайерэн","loyere":"луайерэ",
+  "theater":"тэатэр","d'":"д","der":"да","sechs":"зэкс","ursprénglech":"уршпрэнглэщ","loyer":"луайе","loyeren":"луайерэн","loyere":"луайерэ",
   "spadséieren":"шпацэйэрэн","spadséiere":"шпацэйэрэ","invitéieren":"инвитэйэрэн","invitéiere":"инвитэйэрэ","verstoen":"фэрштоэн","verstanen":"фэрштанэн",
   "aussprooch":"аусшпрох","beispill":"бэйшпил","juni":"юни","garage":"гараж","restaurant":"рэсторан","musée":"мюзэ","tram":"трам","stau":"штау"
 };
 const TR_V="aeiouäëéèêüöyâîôû";
-const TR_DI=[["tsch","ч"],["ng","нг"],["ju","ю"],["ja","я"],["sch","ш"],["äi","ай"],["äu","ой"],["eu","ой"],["ei","эй"],["éi","эй"],["ie","иэ"],["ue","уэ"],["ou","оу"],["au","ау"],["oi","ой"],["aa","а"],["ee","э"],["éé","э"],["oo","о"],["ii","и"],["uu","у"],["qu","кв"],["ph","ф"],["th","т"],["ck","к"],["tz","ц"],["dt","т"]];
+const TR_DI=[["tsch","ч"],["äe","э"],["ng","нг"],["ju","ю"],["ja","я"],["sch","ш"],["äi","ай"],["äu","ой"],["eu","ой"],["ei","эй"],["éi","эй"],["ie","иэ"],["ue","уэ"],["ou","оу"],["au","ау"],["oi","ой"],["aa","а"],["ee","э"],["éé","э"],["oo","о"],["ii","и"],["uu","у"],["qu","кв"],["ph","ф"],["th","т"],["ck","к"],["tz","ц"],["dt","т"]];
 const TR_1={a:"а",e:"э",ë:"э",é:"э",è:"э",ê:"э",ä:"э",i:"и",o:"о",u:"у",ü:"ю",ö:"ё",y:"и",â:"а",î:"и",ô:"о",û:"у",
   b:"б",d:"д",f:"ф",k:"к",l:"л",m:"м",n:"н",p:"п",r:"р",t:"т",v:"ф",w:"в",z:"ц",j:"й",x:"кс",h:"х"};
 function trWord(w0){
@@ -819,6 +821,10 @@ function trWord(w0){
     out+=TR_1[c]||c;i++;
   }
   return out+tail;
+}
+function trSpan(text){
+  const lb=/[а-яё]/i.test(text)?(text.includes(" — ")?text.split(" — ")[0]:""):text;
+  return lb&&/[a-zäëé]/i.test(lb)?'<span class="tr">'+esc(tr(lb))+'</span>':"";
 }
 function tr(text){return "["+text.toLowerCase().replace(/w\.e\.g\./g,"wann ech gelift").replace(/[a-zäëéèêüöyâîôû'-]+/g,w=>TR_EXC[w]?TR_EXC[w]:w.split("-").map(p=>p?trWord(p):"").join("-").replace(/^-|-$/g,"")).replace(/\s+/g," ").trim()+"]";}
 
@@ -1049,8 +1055,8 @@ function buildGram(){
   showGram(curGram);
 }
 function gramTable(t){
-  return '<div class="tbl gram-t"><table><tr>'+t.h.map(c=>'<th>'+esc(c)+'</th>').join("")+'</tr>'
-    +t.r.map(r=>'<tr>'+r.map((c,i)=>i===0?'<th>'+esc(c)+'</th>':'<td>'+esc(c)+'</td>').join("")+'</tr>').join("")+'</table></div>';
+  return '<div class="tbl gram-t"><table><tr>'+t.h.map(c=>'<th>'+esc(c)+trSpan(c)+'</th>').join("")+'</tr>'
+    +t.r.map(r=>'<tr>'+r.map((c,i)=>i===0?'<th>'+esc(c)+trSpan(c)+'</th>':'<td>'+esc(c)+trSpan(c)+'</td>').join("")+'</tr>').join("")+'</table></div>';
 }
 function showGram(k){
   curGram=k;const i=GRAMS.findIndex(g=>g.k===k),g=GRAMS[i];
@@ -1060,7 +1066,7 @@ function showGram(k){
    +'<p class="lead" style="margin-top:10px">'+esc(g.why)+'</p>'
    +'<ul class="gram-rules">'+g.rules.map(r=>'<li>'+esc(r)+'</li>').join("")+'</ul>'
    +g.t.map(gramTable).join("")
-   +'<h3 style="margin-top:18px">Примеры</h3><div>'+rows(g.ex,true,"g-"+k)+'</div>'
+   +'<h3 style="margin-top:18px">Примеры</h3><div>'+rows(g.ex,true,"g-"+k,true)+'</div>'
    +'<div class="note"><b>Типичная ошибка.</b> '+esc(g.trap)+'</div>'
    +'<div class="row" style="justify-content:space-between;margin-top:6px"><div class="row">'
    +(i>0?'<button class="btn ghost" data-go="'+GRAMS[i-1].k+'">← '+esc(GRAMS[i-1].lb)+'</button>':'')
@@ -1073,8 +1079,8 @@ function showGram(k){
 
 /* ============ PHOTO ============ */
 function buildPhoto(){
-  $("#photosteps").innerHTML=PHOTO_STEPS.map(s=>'<li><div><b>'+esc(s[0])+'</b><span class="lb">'+esc(s[1])+'</span><br><span class="ru">'+esc(s[2])+'</span></div></li>').join("");
-  $("#photowords").innerHTML=rows(PHOTO_WORDS,true,"photo");bindStars($("#photowords"));
+  $("#photosteps").innerHTML=PHOTO_STEPS.map(s=>'<li><div><b>'+esc(s[0])+'</b><span class="lb">'+esc(s[1])+'</span>'+trSpan(s[1])+'<span class="ru">'+esc(s[2])+'</span></div></li>').join("");
+  $("#photowords").innerHTML=rows(PHOTO_WORDS,true,"photo",true);bindStars($("#photowords"));
   let scene=null;
   $("#newscene").addEventListener("click",()=>{let s;do{s=SCENES[Math.floor(Math.random()*SCENES.length)];}while(s===scene&&SCENES.length>1);scene=s;$("#scene").textContent=s;stopTimer("scene");$("#scenetimer").textContent="2:00";$("#scenetimer").classList.remove("low");});
   $("#scenestart").addEventListener("click",()=>{if(!scene)$("#newscene").click();startTimer("scene",120,$("#scenetimer"),()=>{});});
@@ -1213,9 +1219,9 @@ function buildQuiz(){
   function show(){
     answered=false;const q=QUIZ[order[qi]];
     host.innerHTML='<div class="muted">Вопрос '+(qi+1)+' из '+QUIZ.length+' · верно: '+score+'</div><div class="quiz-q"></div><div class="opts"></div><div class="expl" hidden></div><div class="row" style="margin-top:12px"><button class="btn" id="qnext" hidden>Дальше</button></div>';
-    host.querySelector(".quiz-q").textContent=q.q;
+    host.querySelector(".quiz-q").innerHTML=esc(q.q)+trSpan(q.q);
     const opts=host.querySelector(".opts");
-    q.o.forEach((o,i)=>{const b=document.createElement("button");b.type="button";b.textContent=o;b.addEventListener("click",()=>{if(answered)return;answered=true;if(i===q.a){score++;b.classList.add("ok");}else{b.classList.add("bad");opts.children[q.a].classList.add("ok");}const ex=host.querySelector(".expl");ex.hidden=false;ex.textContent=q.x;host.querySelector("#qnext").hidden=false;host.querySelector(".muted").textContent='Вопрос '+(qi+1)+' из '+QUIZ.length+' · верно: '+score;});opts.appendChild(b);});
+    q.o.forEach((o,i)=>{const b=document.createElement("button");b.type="button";b.innerHTML=esc(o)+trSpan(o);b.addEventListener("click",()=>{if(answered)return;answered=true;if(i===q.a){score++;b.classList.add("ok");}else{b.classList.add("bad");opts.children[q.a].classList.add("ok");}const ex=host.querySelector(".expl");ex.hidden=false;ex.textContent=q.x;host.querySelector("#qnext").hidden=false;host.querySelector(".muted").textContent='Вопрос '+(qi+1)+' из '+QUIZ.length+' · верно: '+score;});opts.appendChild(b);});
     host.querySelector("#qnext").addEventListener("click",()=>{qi++;if(qi>=QUIZ.length)finish();else show();});
   }
   function finish(){
@@ -1305,7 +1311,7 @@ function newCode(){
 function refreshAll(){
   syncChecks();buildToday();refreshStats();render();showTopic(curTopic);showGram(curGram);
   $("#rescue").innerHTML=rows(RESCUE,true,"rescue",true);bindStars($("#rescue"));
-  $("#photowords").innerHTML=rows(PHOTO_WORDS,true,"photo");bindStars($("#photowords"));
+  $("#photowords").innerHTML=rows(PHOTO_WORDS,true,"photo",true);bindStars($("#photowords"));
   $("#quizbest").textContent="лучший: "+(state.quizBest?state.quizBest+" / "+QUIZ.length:"—");
 }
 /* pull, merge, push only if something differs */

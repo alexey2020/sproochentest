@@ -223,6 +223,17 @@ tr:first-child th{border-top:0}
 .deck .tr{font-size:16px;margin-top:6px}
 .sim-stage .tr{font-size:16px;margin-top:-4px}
 body.no-tr .tr{display:none}
+ol.rtl,ul.rtl{list-style:none;margin:8px 0 0;padding:0}
+.rtl li{display:grid;grid-template-columns:22px 26px 1fr;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line2)}
+.rtl li:first-child{border-top:0}
+ul.rtl li{grid-template-columns:1fr}
+.rtl .rn{font-weight:800;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.rtl a{font-weight:600;text-decoration:none;color:var(--ink)}
+.rtl a:hover{color:var(--blue);text-decoration:underline}
+.rtl .en{color:var(--muted);font-size:14px;font-style:italic}
+.rtl .meta{color:var(--muted);font-size:13px}
+.rtl li.done a{color:var(--muted)}
+.chk.rtl-chk{width:auto}
 .note{border-left:4px solid var(--sun);padding:8px 14px;background:color-mix(in srgb,var(--sun) 12%,var(--paper));border-radius:0 var(--radius-s) var(--radius-s) 0;margin:12px 0}
 footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -431,6 +442,20 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       <li>Официальное аудио INL прорешать трижды: неделя 0 (точка отсчёта), неделя 10, неделя 17. Ссылки во вкладке «Ресурсы».</li>
     </ul>
   </div>
+</section>
+
+<section class="panel" id="p-rtl" hidden>
+  <p class="lead">Бесплатный курс RTL Today «Learn Luxembourgish» на английском: 20 разговорных уроков с аудио и 19 уроков грамматики. Они выходили парами — урок и грамматика одной недели, так их удобно и проходить. Отмечай пройденное — прогресс синхронизируется вместе с остальным.</p>
+  <div class="row" style="justify-content:space-between">
+    <div class="stat"><div><div class="n" id="rtlN">0</div><div class="t">из <span id="rtlT"></span> пройдено</div></div></div>
+    <a class="btn ghost" href="https://today.rtl.lu/luxembourg-insider/language" target="_blank" rel="noopener">Раздел на RTL Today ↗</a>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card"><h3>Уроки · Lessons</h3><p class="muted" style="margin-top:4px">Разговорные темы: диалоги, полезные фразы, аудио.</p><ol class="rtl" id="rtl-l"></ol></div>
+    <div class="card"><h3>Грамматика · Language Basics</h3><p class="muted" style="margin-top:4px">Короткие объяснения правил с примерами.</p><ol class="rtl" id="rtl-b"></ol><hr class="soft"><ol class="rtl" id="rtl-x"></ol></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Другие материалы раздела</h3><ul class="rtl" id="rtl-o"></ul></div>
+  <footer style="margin-top:22px">Статьи открываются на сайте RTL Today в новой вкладке. Список собран в октябре 2026 года.</footer>
 </section>
 
 <section class="panel" id="p-res" hidden>
@@ -923,7 +948,7 @@ function paintStrip(){
 }
 
 /* ============ TABS ============ */
-const TABS=[["today","Сегодня"],["plan","План"],["topics","Темы"],["photo","Фото"],["gram","Грамматика"],["train","Тренажёр"],["listen","Аудирование"],["res","Ресурсы"]];
+const TABS=[["today","Сегодня"],["plan","План"],["topics","Темы"],["photo","Фото"],["gram","Грамматика"],["train","Тренажёр"],["listen","Аудирование"],["rtl","Курс RTL"],["res","Ресурсы"]];
 function buildTabs(){
   const nav=$("#tabs");
   TABS.forEach(([id,l],i)=>{const b=document.createElement("button");b.type="button";b.id="tab-"+id;b.textContent=l;b.setAttribute("role","tab");b.setAttribute("aria-selected",String(i===0));b.addEventListener("click",()=>select(id));nav.appendChild(b);});
@@ -944,7 +969,7 @@ function chk(key,text,onchange){
   b.addEventListener("click",()=>{setFlag("done",key,!state.done[key]);persist();syncChecks();if(onchange)onchange();});
   b.dataset.key=key;return b;
 }
-function syncChecks(){document.querySelectorAll(".chk[data-key]").forEach(b=>b.setAttribute("aria-pressed",state.done[b.dataset.key]?"true":"false"));paintStrip();document.querySelectorAll("details.week").forEach(det=>updateWeekPct(det));}
+function syncChecks(){refreshRtl();document.querySelectorAll(".chk[data-key]").forEach(b=>b.setAttribute("aria-pressed",state.done[b.dataset.key]?"true":"false"));paintStrip();document.querySelectorAll("details.week").forEach(det=>updateWeekPct(det));}
 
 /* ============ TODAY ============ */
 function focusBlock(w){
@@ -1008,7 +1033,7 @@ function buildPlan(){
     });
   });
   $("#openall").addEventListener("click",e=>{const all=[...document.querySelectorAll("details.week")];const open=all.some(x=>!x.open);all.forEach(x=>x.open=open);e.currentTarget.textContent=open?"Свернуть все недели":"Развернуть все недели";});
-  $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;Object.keys(state.done).forEach(k=>setFlag("done",k,false));persist();syncChecks();buildToday();});
+  $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;Object.keys(state.done).filter(k=>!k.startsWith("rtl-")).forEach(k=>setFlag("done",k,false));persist();syncChecks();buildToday();});
   $("#togram").addEventListener("click",()=>select("gram"));
 }
 
@@ -1242,6 +1267,89 @@ function buildListen(){
   $("#listensub").addEventListener("click",()=>{if(!listenTotal())return;state.listenDec[DEVICE]=(state.listenDec[DEVICE]||0)+1;persist();});
 }
 
+/* RTL Today «Learn Luxembourgish» (today.rtl.lu/luxembourg-insider/language), collected 10.2026.
+   lessons/basics: [n, url, English title, Russian title, date, has audio]; other: [url, English, Russian, date] */
+const RTL_LESSONS = [
+ [1,"https://today.rtl.lu/luxembourg-insider/language/lesson-1-how-to-introduce-yourself-1826915","How to introduce yourself","Как представиться","03.04.2022",true],
+ [2,"https://today.rtl.lu/luxembourg-insider/language/lesson-2-how-to-talk-to-your-neighbour-about-the-weather-1826913","How to talk to your neighbour about the weather","Разговор с соседом о погоде","10.04.2022",true],
+ [3,"https://today.rtl.lu/luxembourg-insider/language/lesson-3-how-to-ask-for-directions-1826911","How to ask for directions","Как спросить дорогу","17.04.2022",true],
+ [4,"https://today.rtl.lu/luxembourg-insider/language/lesson-4-how-to-tell-time-and-dates-1826910","How to tell time and dates","Время и даты","24.04.2022",true],
+ [5,"https://today.rtl.lu/luxembourg-insider/language/lesson-5-how-to-schedule-a-meeting-1826909","How to schedule a meeting","Как договориться о встрече","01.05.2022",true],
+ [6,"https://today.rtl.lu/luxembourg-insider/language/lesson-6-chat-with-the-cashier-at-the-supermarket-1826907","Chat with the cashier at the supermarket","Разговор с кассиром в супермаркете","08.05.2022",true],
+ [7,"https://today.rtl.lu/luxembourg-insider/language/lesson-7-how-to-order-at-cafes-and-bakeries-1912322","How to order at cafés and bakeries","Заказ в кафе и булочной","15.05.2022",true],
+ [8,"https://today.rtl.lu/luxembourg-insider/language/lesson-8-how-to-decipher-a-menu-and-order-food-1915564","How to decipher a menu and order food","Как понять меню и заказать еду","21.05.2022",true],
+ [9,"https://today.rtl.lu/luxembourg-insider/language/lesson-9-how-to-talk-about-your-family-1918409","How to talk about your family","Как рассказать о семье","29.05.2022",true],
+ [10,"https://today.rtl.lu/luxembourg-insider/language/lesson-10-how-to-ask-for-medical-assistance-1921642","How to ask for medical assistance","Как попросить медицинскую помощь","05.06.2022",true],
+ [11,"https://today.rtl.lu/luxembourg-insider/language/lesson-11-how-to-talk-about-past-experiences-1922446","How to talk about past experiences","Как рассказать о прошлом","12.06.2022",true],
+ [12,"https://today.rtl.lu/luxembourg-insider/language/lesson-12-how-to-talk-about-your-plans-for-the-future-1922719","How to talk about your plans for the future","Как рассказать о планах","19.06.2022",true],
+ [13,"https://today.rtl.lu/luxembourg-insider/language/lesson-13-holidays-and-travelling-1922738","Holidays and travelling","Отпуск и путешествия","26.06.2022",true],
+ [14,"https://today.rtl.lu/luxembourg-insider/language/lesson-14-how-to-say-that-you-like-something-1922758","How to say that you like something","Как сказать, что тебе нравится","03.07.2022",true],
+ [15,"https://today.rtl.lu/luxembourg-insider/language/lesson-15-how-to-express-your-dislike-1935143","How to express your dislike","Как сказать, что не нравится","18.09.2022",true],
+ [16,"https://today.rtl.lu/luxembourg-insider/language/lesson-16-elections-and-politics-1935170","Elections and politics","Выборы и политика","25.09.2022",true],
+ [17,"https://today.rtl.lu/luxembourg-insider/language/lesson-17-how-to-talk-about-sports-1979344","How to… talk about sports","Как говорить о спорте","14.10.2022",true],
+ [18,"https://today.rtl.lu/luxembourg-insider/language/lesson-18-internet-and-computers-1979362","Internet and computers","Интернет и компьютеры","30.10.2022",true],
+ [19,"https://today.rtl.lu/luxembourg-insider/language/lesson-19-talking-about-your-pets-1979376","Talking about your pets","Домашние животные","20.11.2022",true],
+ [20,"https://today.rtl.lu/luxembourg-insider/language/lesson-20-celebrations-and-special-occasions-1979379","Celebrations and special occasions","Праздники и особые события","27.11.2022",true]
+];
+const RTL_BASICS = [
+ [1,"https://today.rtl.lu/luxembourg-insider/language/language-basics-1-counting-countries-and-d-de-den-1826917","Counting, countries, and d', de, den","Счёт, страны и артикли d', de, den","03.04.2022",true],
+ [2,"https://today.rtl.lu/luxembourg-insider/language/language-basics-2-grammatical-gender-1826914","Grammatical gender","Грамматический род","10.04.2022",false],
+ [3,"https://today.rtl.lu/luxembourg-insider/language/language-basics-3-the-difference-between-op-and-bei-1826912","The difference between 'op' and 'bei'","Чем op отличается от bei","17.04.2022",false],
+ [4,"https://today.rtl.lu/luxembourg-insider/language/language-basics-4-counting-beyond-100-1826908","Counting beyond 100","Числа больше 100","24.04.2022",false],
+ [5,"https://today.rtl.lu/luxembourg-insider/language/language-basics-5-ordinal-numbers-1826906","Ordinal numbers","Порядковые числительные","01.05.2022",false],
+ [6,"https://today.rtl.lu/luxembourg-insider/language/language-basics-6-formal-and-informal-speech-1898565","Formal and informal speech","На «ты» и на «Вы»","08.05.2022",true],
+ [7,"https://today.rtl.lu/luxembourg-insider/language/language-basics-7-regular-and-irregular-verbs-1915580","Regular and irregular verbs","Правильные и неправильные глаголы","21.05.2022",true],
+ [8,"https://today.rtl.lu/luxembourg-insider/language/language-basics-8-the-verb-to-be-sinn-1918438","The verb 'to be' (sinn)","Глагол sinn — «быть»","29.05.2022",true],
+ [9,"https://today.rtl.lu/luxembourg-insider/language/language-basics-9-the-verb-to-have-hunn-1921662","The verb 'to have' (hunn)","Глагол hunn — «иметь»","05.06.2022",true],
+ [10,"https://today.rtl.lu/luxembourg-insider/language/language-basics-10-the-past-tenses-1922458","The past tense(s)","Прошедшее время","12.06.2022",false],
+ [11,"https://today.rtl.lu/luxembourg-insider/language/language-basics-11-the-future-tense-that-doesnt-really-exist-1922723","The future tense (that doesn't really exist)","Будущее время, которого почти нет","19.06.2022",false],
+ [12,"https://today.rtl.lu/luxembourg-insider/language/language-basics-12-possessive-adjectives-and-talking-about-who-owns-what-1922745","Possessive adjectives and talking about who owns what","Притяжательные местоимения: кто чем владеет","26.06.2022",false],
+ [13,"https://today.rtl.lu/luxembourg-insider/language/language-basics-13-comparative-1934042","Comparative","Сравнение","03.07.2022",false],
+ [14,"https://today.rtl.lu/luxembourg-insider/language/language-basics-14-cases-1935165","Cases","Падежи","18.09.2022",false],
+ [15,"https://today.rtl.lu/luxembourg-insider/language/language-basics-15-an-overview-of-pronouns-1935173","An overview of pronouns","Обзор местоимений","25.09.2022",false],
+ [16,"https://today.rtl.lu/luxembourg-insider/language/language-basics-16-prepositions-1979355","Prepositions","Предлоги","14.10.2022",false],
+ [17,"https://today.rtl.lu/luxembourg-insider/language/language-basics-17-adjectives-1979370","Adjectives","Прилагательные","30.10.2022",false],
+ [18,"https://today.rtl.lu/luxembourg-insider/language/language-basics-18-grab-a-bag-of-random-grammar-topics-1979378","Grab a bag of random grammar topics","Разные грамматические темы","20.11.2022",false],
+ [19,"https://today.rtl.lu/luxembourg-insider/language/language-basics-19-where-does-luxembourgs-vocabulary-come-from-1979377","Where does Luxembourg's vocabulary come from?","Откуда взялась люксембургская лексика","27.11.2022",false]
+];
+const RTL_EXAM = ["https://today.rtl.lu/luxembourg-insider/language/have-you-paid-attention-during-class-its-exam-time-1941511", "Have you paid attention during class? It's exam time!", "Итоговый тест по всему курсу", "17.07.2022"];
+const RTL_OTHER = [
+ ["https://today.rtl.lu/luxembourg-insider/language/level-up-your-luxembourgish-through-online-games-2060293","Level up your Luxembourgish through online games!","Онлайн-игры: числа и слова в игровой форме","08.05.2023"],
+ ["https://today.rtl.lu/luxembourg-insider/language/saz-lu-your-new-writing-assistant-in-luxembourgish-2052938","Saz.lu: Your new writing assistant in Luxembourgish","Saz.lu — помощник для письма на люксембургском","17.04.2023"],
+ ["https://today.rtl.lu/luxembourg-insider/language/new-browser-extension-makes-learning-luxembourgish-easier-1860791","New browser extension makes learning Luxembourgish easier","LëtzRead — расширение браузера для чтения с переводом","10.02.2022"],
+ ["https://today.rtl.lu/luxembourg-insider/language/6-tips-to-practice-your-oral-comprehension-and-prepare-for-the-sproochentest-1296691","6 tips to practice your oral comprehension and prepare for the Sproochentest","6 советов: тренируем понимание на слух перед Sproochentest","01.05.2021"],
+ ["https://today.rtl.lu/luxembourg-insider/language/what-mobile-apps-could-you-use-to-learn-luxembourgish-1628374","What mobile apps could you use to learn Luxembourgish?","Приложения для изучения люксембургского","01.05.2021"],
+ ["https://today.rtl.lu/luxembourg-insider/language/20-funny-luxembourgish-insults-to-swear-like-a-local-1628362","20 funny Luxembourgish insults to swear like a local","20 смешных люксембургских ругательств","10.12.2020"],
+ ["https://today.rtl.lu/luxembourg-insider/language/learning-luxembourgish-learn-to-tell-your-bier-from-your-bier-from-your-bier-1455881","Learning Luxembourgish? Learn to tell your Bier from your Bier.. from your Bier","Bier, Bier и Bier: видео о словах-омонимах","13.01.2020"]
+];
+
+/* ============ RTL COURSE ============ */
+function rtlItem(key,n,url,ru,en,meta){
+  const li=document.createElement("li");
+  if(key){
+    const b=document.createElement("button");b.type="button";b.className="chk rtl-chk";b.dataset.key=key;b.setAttribute("aria-label","Пройдено");
+    b.setAttribute("aria-pressed",state.done[key]?"true":"false");b.innerHTML='<span class="box">'+tick+'</span>';
+    b.addEventListener("click",()=>{setFlag("done",key,!state.done[key]);persist();syncChecks();});
+    li.appendChild(b);
+    const num=document.createElement("span");num.className="rn";num.textContent=n;li.appendChild(num);
+  }
+  const d=document.createElement("div");
+  d.innerHTML='<a target="_blank" rel="noopener"></a><div class="en"></div><div class="meta"></div>';
+  const a=d.querySelector("a");a.href=url;a.textContent=ru;d.querySelector(".en").textContent=en;d.querySelector(".meta").textContent=meta;
+  li.appendChild(d);return li;
+}
+function buildRtl(){
+  RTL_LESSONS.forEach(([n,u,en,ru,dt,au])=>$("#rtl-l").appendChild(rtlItem("rtl-l"+n,n,u,ru,en,dt+(au?" · аудио":""))));
+  RTL_BASICS.forEach(([n,u,en,ru,dt,au])=>$("#rtl-b").appendChild(rtlItem("rtl-b"+n,n,u,ru,en,dt+(au?" · аудио":""))));
+  const [u,en,ru,dt]=RTL_EXAM;$("#rtl-x").appendChild(rtlItem("rtl-exam","✓",u,ru,en,dt));
+  RTL_OTHER.forEach(([u,en,ru,dt])=>$("#rtl-o").appendChild(rtlItem(null,null,u,ru,en,dt)));
+  $("#rtlT").textContent=RTL_LESSONS.length+RTL_BASICS.length+1;
+}
+function refreshRtl(){
+  document.querySelectorAll(".rtl-chk").forEach(b=>b.closest("li").classList.toggle("done",!!state.done[b.dataset.key]));
+  $("#rtlN").textContent=Object.keys(state.done).filter(k=>k.startsWith("rtl-")).length;
+}
+
 /* ============ RESOURCES ============ */
 const EXAMDAY=["Оригинал удостоверения, паспорта или вида на жительство — копии не принимают","Письмо INL с временем и площадкой — распечатать или сохранить в телефон","Приехать за 20 минут. Glacis — трамвай до Theater или Faïencerie; Belval — поезд до Belval-Université","Утром: 10 минут радио и рассказ о себе вслух один раз. Больше ничего","В беседе: не молчать, переспрашивать по-люксембургски, заканчивать ответ встречным вопросом","В аудировании: читать вопросы заранее, отвечать сразу, не застревать","После экзамена — результат ждать по почте; новая запись возможна только после него"];
 function buildRes(){
@@ -1259,14 +1367,14 @@ function refreshStats(){
   const pct=Math.round(done/total*100);
   $("#pct").textContent=pct+"%";
   const C=2*Math.PI*26;const fg=$("#ringfg");fg.style.strokeDasharray=C;fg.style.strokeDashoffset=C*(1-pct/100);
-  $("#knownN").textContent=Object.keys(state.known).length;
+  $("#knownN").textContent=Object.keys(state.known).length;refreshRtl();
   $("#listenN").textContent=listenTotal();$("#listenN2").textContent=listenTotal();$("#listensub").disabled=!listenTotal();
   simLog&&$("#simlog")&&simLog();
 }
 
 /* ============ BOOT ============ */
 localLoad();
-buildHero();buildTabs();buildToday();buildPlan();buildTopics();buildPhoto();buildGram();buildTrain();buildListen();buildRes();
+buildHero();buildTabs();buildToday();buildPlan();buildTopics();buildPhoto();buildGram();buildTrain();buildListen();buildRtl();buildRes();
 function applyTr(on){document.body.classList.toggle("no-tr",!on);document.querySelectorAll(".trtoggle").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.textContent="Транскрипция: "+(on?"вкл":"выкл");});}
 let showTr=lsGet(KEY+".tr")!=="0";applyTr(showTr);
 document.querySelectorAll(".trtoggle").forEach(b=>b.addEventListener("click",()=>{showTr=!showTr;lsSet(KEY+".tr",showTr?null:"0");applyTr(showTr);}));

@@ -234,6 +234,12 @@ ul.rtl li{grid-template-columns:1fr}
 .rtl .meta{color:var(--muted);font-size:13px}
 .rtl li.done a{color:var(--muted)}
 .chk.rtl-chk{width:auto}
+.rtl li{grid-template-columns:22px 36px 1fr}
+.rtl .rn{white-space:nowrap}
+.rtl-wk{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:22px 0 4px;padding-left:12px;border-left:5px solid var(--pc)}
+.rtl-wk h3{color:var(--pc)}
+.rtl-wk .pill{background:var(--sun);color:var(--sun-ink);border-color:var(--sun)}
+.rtl-sub{margin-top:14px;font-size:13px;color:var(--muted);font-weight:600}
 .note{border-left:4px solid var(--sun);padding:8px 14px;background:color-mix(in srgb,var(--sun) 12%,var(--paper));border-radius:0 var(--radius-s) var(--radius-s) 0;margin:12px 0}
 footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -263,6 +269,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       <div class="focus" id="today-focus"></div>
       <h3>Задачи недели</h3>
       <ul class="tasks" id="today-tasks"></ul>
+      <div id="today-rtl"></div>
     </div>
     <div>
       <div class="card">
@@ -445,16 +452,21 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 </section>
 
 <section class="panel" id="p-rtl" hidden>
-  <p class="lead">Бесплатный курс RTL Today «Learn Luxembourgish» на английском: 20 разговорных уроков с аудио и 19 уроков грамматики. Они выходили парами — урок и грамматика одной недели, так их удобно и проходить. Отмечай пройденное — прогресс синхронизируется вместе с остальным.</p>
+  <p class="lead">Бесплатный курс RTL Today «Learn Luxembourgish» на английском: 20 разговорных уроков с аудио, 19 уроков грамматики, итоговый тест и семь полезных материалов. Всё разложено по неделям плана под тему и грамматику недели и закончено к 24 января — последние четыре недели остаются для симуляций. Отмечай пройденное — прогресс синхронизируется вместе с остальным.</p>
+  <div class="note"><b>Когда заниматься.</b> Ежедневные 30 минут не трогаем. Курс RTL — в выходные: одна сессия 30–40 минут, урок недели и его грамматика. Аудио из урока можно слушать и в будни вместо радио.</div>
   <div class="row" style="justify-content:space-between">
     <div class="stat"><div><div class="n" id="rtlN">0</div><div class="t">из <span id="rtlT"></span> пройдено</div></div></div>
+    <div class="chips" id="rtlview" style="margin:0"></div>
     <a class="btn ghost" href="https://today.rtl.lu/luxembourg-insider/language" target="_blank" rel="noopener">Раздел на RTL Today ↗</a>
   </div>
+  <div id="rtl-weeks"></div>
+  <div id="rtl-course" hidden>
   <div class="grid2" style="margin-top:14px">
     <div class="card"><h3>Уроки · Lessons</h3><p class="muted" style="margin-top:4px">Разговорные темы: диалоги, полезные фразы, аудио.</p><ol class="rtl" id="rtl-l"></ol></div>
     <div class="card"><h3>Грамматика · Language Basics</h3><p class="muted" style="margin-top:4px">Короткие объяснения правил с примерами.</p><ol class="rtl" id="rtl-b"></ol><hr class="soft"><ol class="rtl" id="rtl-x"></ol></div>
   </div>
   <div class="card" style="margin-top:14px"><h3>Другие материалы раздела</h3><ul class="rtl" id="rtl-o"></ul></div>
+  </div>
   <footer style="margin-top:22px">Статьи открываются на сайте RTL Today в новой вкладке. Список собран в октябре 2026 года.</footer>
 </section>
 
@@ -527,37 +539,37 @@ const WEEKS = [
  {s:[2026,10,30],n:9,t:"Датив и предлоги",g:"mat der Famill, bei der Aarbecht, vun der Stad, an engem Appartement, zu Lëtzebuerg",topic:"transport",
   l:"Дорожная сводка RTL: направления, места, время.",
   tasks:["Тема «Transport a Verkéier»","10 предложений с mat / bei / vun / an / zu — вслух","Описать ещё 5 фото по шаблону","Если живой практики ещё нет — записаться на Sproochcafé или найти tandem в этой неделе"]},
- {s:[2026,11,6],n:10,t:"Чекпоинт фазы 2",g:"Повторение: Präsens, Perfekt, Modalverben, Nebensätze",topic:"gesondheet",
+ {s:[2026,11,7],n:10,t:"Чекпоинт фазы 2",g:"Повторение: Präsens, Perfekt, Modalverben, Nebensätze",topic:"gesondheet",
   l:"Официальное аудио INL второй раз. Сравнить с W0 — разрыв должен быть виден.",
   tasks:["Тема «Gesondheet a Sport»","Монолог 90 секунд на 6 случайных тем из тренажёра — без подготовки","Прорешать официальное аудио второй раз, записать результат","Квиз по грамматике — 12 из 12"]},
- {s:[2026,11,13],n:11,t:"Официальная тема: сон и отдых",g:"Повторение Perfekt; частотные наречия ëmmer, dacks, heiansdo, ni",topic:"schlof",
+ {s:[2026,11,14],n:11,t:"Официальная тема: сон и отдых",g:"Повторение Perfekt; частотные наречия ëmmer, dacks, heiansdo, ni",topic:"schlof",
   l:"Диалоги: кто чего хочет, кто с чем не согласен, о чём договорились в конце.",
   tasks:["Прогнать DOK-56 «Schlof an Entspanung» целиком","Тема «Schlof an Entspanung»: все фразы + встречный вопрос «An Dir?» после каждого ответа","Симулятор устной части: 1 прогон беседы по таймеру","Описать 5 фото"]},
- {s:[2026,11,20],n:12,t:"Официальная тема: праздники",g:"Даты и месяцы: den 23. Juni, am Dezember, op Chrëschtdag",topic:"fester",
+ {s:[2026,11,21],n:12,t:"Официальная тема: праздники",g:"Даты и месяцы: den 23. Juni, am Dezember, op Chrëschtdag",topic:"fester",
   l:"Лёгкая неделя: только радио фоном и карточки. Новых разборов нет.",
   tasks:["Прогнать DOK-57 «Fester» — тема сама в календаре, говорить о Рождестве легко","Тема «Fester»: как празднуем дома, что в Люксембурге","Карточки: только повторение, ничего нового","Радио 100,7 во время готовки"]},
- {s:[2026,11,27],n:13,t:"Поездки и повторение",g:"Perfekt с sinn в поездках: si mir gefuer, sinn ech gefloen",topic:"rees",
+ {s:[2026,11,28],n:13,t:"Поездки и повторение",g:"Perfekt с sinn в поездках: si mir gefuer, sinn ech gefloen",topic:"rees",
   l:"Лёгкая неделя. Один длинный подкаст без разбора, просто слушать.",
   tasks:["Тема «Rees a Vakanz»: прошлый отпуск и планы","Пройти колоду всех тем один раз, отметить забытое","Диктофон: 2 минуты «Wat hutt Dir iwwer d'Feierdeeg gemaach?»","Отдых — это тоже план"]},
- {s:[2027,0,3],n:14,t:"Люксембург и языки",g:"Сравнение: méi … wéi, am léifsten, besser; Futur с wäerten или Präsens + muer",topic:"letzebuerg",
+ {s:[2027,0,4],n:14,t:"Люксембург и языки",g:"Сравнение: méi … wéi, am léifsten, besser; Futur с wäerten или Präsens + muer",topic:"letzebuerg",
   l:"20 минут в день. Три прохода — три раза в неделю, фрагменты по 3 минуты.",
   tasks:["Темы «Liewen zu Lëtzebuerg» и «Sproochen a Léieren»","Фразы-спасатели наизусть и — главное — в живой речи с партнёром","Симулятор: 2 прогона беседы","Пройти тест уровня на LLO.lu, записать результат"]},
- {s:[2027,0,10],n:15,t:"Медиа, друзья, соседи",g:"Местоимения в дативе: mir, dir, him, hir, eis, iech, hinnen",topic:"medien",
+ {s:[2027,0,11],n:15,t:"Медиа, друзья, соседи",g:"Местоимения в дативе: mir, dir, him, hir, eis, iech, hinnen",topic:"medien",
   l:"Выступление / мнение: ловить awer, well, ech mengen, ech sinn net d'accord.",
   tasks:["Темы «Medien, Handy an Internet» и «Frënn an Noperen»","10 фото по таймеру 2 минуты — без пауз дольше 3 секунд","Симулятор: 2 прогона, один — с записью и прослушиванием себя","Список своих слабых тем — 3 штуки"]},
- {s:[2027,0,17],n:16,t:"Чекпоинт фазы 3: первая полная симуляция",g:"Повторение всего минимума",topic:"natur",
+ {s:[2027,0,18],n:16,t:"Чекпоинт фазы 3: первая полная симуляция",g:"Повторение всего минимума",topic:"natur",
   l:"Первая полная симуляция аудирования: 35 минут, один раз, без пауз.",
   tasks:["Темы «Natur an Déieren» и «Kleeder»","Полная симуляция: 5 мин беседа + 5 мин фото + 35 мин аудио, по таймеру, записать","Договориться о 2 сессиях с носителем или репетитором на фазу 4","Квиз по грамматике — 12 из 12 второй раз подряд"]},
- {s:[2027,0,24],n:17,t:"Режим экзамена",g:"Никакой новой грамматики",topic:"all",
+ {s:[2027,0,25],n:17,t:"Режим экзамена",g:"Никакой новой грамматики",topic:"all",
   l:"Официальное аудио INL третий, последний раз. Разобрать каждую ошибку.",
   tasks:["2 полные симуляции устной части","Сессия с носителем: попросить задавать вопросы как экзаменатор","Три слабые темы — по 3 монолога на каждую","Проверить почту: письмо INL с временем и площадкой приходит не позже 3 февраля"]},
- {s:[2027,0,31],n:18,t:"Три симуляции",g:"—",topic:"all",
+ {s:[2027,1,1],n:18,t:"Три симуляции",g:"—",topic:"all",
   l:"Аудио в условиях экзамена: читать вопросы до звучания, не застревать.",
   tasks:["3 симуляции устной части, разные дни","Первые 30 секунд ответа на каждую из 18 тем — отрепетировать","Вторая сессия с носителем","Если письма INL нет к 3 февраля — написать в INLL"]},
- {s:[2027,1,7],n:19,t:"Доводка",g:"—",topic:"all",
+ {s:[2027,1,8],n:19,t:"Доводка",g:"—",topic:"all",
   l:"Диалоги и радио 20 минут в день, без разбора.",
   tasks:["3 симуляции, последняя — полностью на люксембургском без переходов","Маршрут до площадки (Glacis или Belval): проверить время в пути, парковку или поезд","Фразы-спасатели — 10 раз вслух каждый день","Документ для экзамена: проверить срок действия удостоверения или паспорта"]},
- {s:[2027,1,14],e:[2027,1,18],n:20,t:"Экзаменационная неделя",g:"—",topic:"all",
+ {s:[2027,1,15],e:[2027,1,18],n:20,t:"Экзаменационная неделя",g:"—",topic:"all",
   l:"Пн–Вт: лёгкое аудио. Ср: радио фоном и отдых. Чт: ничего.",
   tasks:["Пн: 1 короткая симуляция, фото по шаблону","Вт: только повторение фраз-спасателей и рассказа о себе","Ср: ранний сон, документ и маршрут готовы","Чт 18 февраля: приехать за 20 минут, с оригиналом документа. Говорить просто, не молчать, переспрашивать"]}
 ];
@@ -992,6 +1004,7 @@ function buildToday(){
   const fb=focusBlock(w);fb.id="today-focus";$("#today-focus").replaceWith(fb);
   const ul=$("#today-tasks");ul.innerHTML="";
   w.tasks.forEach((t,ti)=>{const li=document.createElement("li");li.appendChild(chk("w"+CUR+"-"+ti,t));ul.appendChild(li);});
+  const tr_=$("#today-rtl");tr_.innerHTML="";const rb=rtlWeekBlock(CUR);if(rb)tr_.appendChild(rb);
   // days grid
   const grid=$("#daygrid");grid.innerHTML="";
   const start=WEEKS[0].start,total=Math.round((EXAM_DATE-start)/DAY)+1;$("#daystotal").textContent=total;
@@ -1029,6 +1042,7 @@ function buildPlan(){
       const ul=document.createElement("ul");ul.className="tasks";
       w.tasks.forEach((t,ti)=>{const li=document.createElement("li");li.appendChild(chk("w"+n+"-"+ti,t));ul.appendChild(li);});
       body.appendChild(ul);
+      const rb=rtlWeekBlock(n);if(rb)body.appendChild(rb);
       host.appendChild(det);updateWeekPct(det);
     });
   });
@@ -1324,6 +1338,31 @@ const RTL_OTHER = [
 ];
 
 /* ============ RTL COURSE ============ */
+/* plan week for every RTL item: l = Lesson, b = Language Basics, o<id> = other articles (id from the URL) */
+const RTL_PLAN={o1296691:0,o1628374:0, l1:1,b8:1,b9:1,o1455881:1, l9:2,b7:2,b6:2,o1860791:2, l4:3,b1:3,b4:3,o2060293:3, l5:4,b2:4,
+  l11:5,b10:5, l14:6,l17:6, l6:7,l7:7,l8:7, l2:8,b3:8,b17:8, l3:9,b14:9,b16:9, l10:10, l15:11,b12:11, l20:12,b5:12, l13:13,l12:13,o1628362:13,
+  b13:14,b11:14,b19:14,o2052938:14, l18:15,l16:15,b15:15, l19:16,b18:16, exam:17};
+const RTL_ALL=[
+  ...RTL_LESSONS.map(([n,u,en,ru,d,a])=>({id:"l"+n,lb:"У"+n,n,u,en,ru,d,a})),
+  ...RTL_BASICS.map(([n,u,en,ru,d,a])=>({id:"b"+n,lb:"Г"+n,n,u,en,ru,d,a})),
+  {id:"exam",lb:"Тест",n:"✓",u:RTL_EXAM[0],en:RTL_EXAM[1],ru:RTL_EXAM[2],d:RTL_EXAM[3]},
+  ...RTL_OTHER.map(([u,en,ru,d])=>({id:"o"+u.match(/(\d+)$/)[1],lb:"+",n:"+",u,en,ru,d}))
+];
+RTL_ALL.forEach(x=>{x.key="rtl-"+x.id;x.wk=RTL_PLAN[x.id];});
+const RTL_ORDER={l:0,b:1,e:2,o:3};
+function rtlOfWeek(n){return RTL_ALL.filter(x=>x.wk===n).sort((a,b)=>RTL_ORDER[a.id[0]]-RTL_ORDER[b.id[0]]);}
+function rtlMeta(x,withWeek){return [x.a?"аудио":"",withWeek&&x.wk!=null?"неделя "+x.wk:"",x.d].filter(Boolean).join(" · ");}
+function rtlList(items,label,withWeek){
+  const ul=document.createElement("ul");ul.className="rtl";
+  items.forEach(x=>ul.appendChild(rtlItem(x.key,label?x.lb:x.n,x.u,x.ru,x.en,rtlMeta(x,withWeek))));
+  return ul;
+}
+function rtlWeekBlock(n){
+  const items=rtlOfWeek(n);if(!items.length)return null;
+  const d=document.createElement("div");
+  d.innerHTML='<div class="rtl-sub">Курс RTL · в выходные</div>';
+  d.appendChild(rtlList(items,true,false));return d;
+}
 function rtlItem(key,n,url,ru,en,meta){
   const li=document.createElement("li");
   if(key){
@@ -1339,11 +1378,31 @@ function rtlItem(key,n,url,ru,en,meta){
   li.appendChild(d);return li;
 }
 function buildRtl(){
-  RTL_LESSONS.forEach(([n,u,en,ru,dt,au])=>$("#rtl-l").appendChild(rtlItem("rtl-l"+n,n,u,ru,en,dt+(au?" · аудио":""))));
-  RTL_BASICS.forEach(([n,u,en,ru,dt,au])=>$("#rtl-b").appendChild(rtlItem("rtl-b"+n,n,u,ru,en,dt+(au?" · аудио":""))));
-  const [u,en,ru,dt]=RTL_EXAM;$("#rtl-x").appendChild(rtlItem("rtl-exam","✓",u,ru,en,dt));
-  RTL_OTHER.forEach(([u,en,ru,dt])=>$("#rtl-o").appendChild(rtlItem(null,null,u,ru,en,dt)));
-  $("#rtlT").textContent=RTL_LESSONS.length+RTL_BASICS.length+1;
+  // view by plan weeks
+  const host=$("#rtl-weeks");
+  WEEKS.forEach(w=>{
+    const items=rtlOfWeek(w.n);if(!items.length)return;
+    const ph=phaseOf(w.n),h=document.createElement("div");h.className="rtl-wk";h.style.setProperty("--pc",ph.color);
+    h.innerHTML='<h3></h3><span class="muted"></span>'+(w.n===CUR?'<span class="pill">сейчас</span>':'');
+    h.querySelector("h3").textContent="Неделя "+w.n+" · "+w.t;h.querySelector(".muted").textContent=fmt(w.start)+" – "+fmt(w.end);
+    host.appendChild(h);
+    const c=document.createElement("div");c.className="card";c.appendChild(rtlList(items,true,false));host.appendChild(c);
+  });
+  // view by course order
+  const by=p=>RTL_ALL.filter(x=>x.id.startsWith(p));
+  $("#rtl-l").replaceWith(Object.assign(rtlList(by("l"),false,true),{id:"rtl-l"}));
+  $("#rtl-b").replaceWith(Object.assign(rtlList(by("b"),false,true),{id:"rtl-b"}));
+  $("#rtl-x").replaceWith(Object.assign(rtlList(by("exam"),false,true),{id:"rtl-x"}));
+  $("#rtl-o").replaceWith(Object.assign(rtlList(by("o"),false,true),{id:"rtl-o"}));
+  $("#rtl-o").querySelectorAll("li").forEach(li=>li.style.gridTemplateColumns="22px 1fr");
+  $("#rtl-o").querySelectorAll(".rn").forEach(x=>x.remove());
+  $("#rtlT").textContent=RTL_ALL.length;
+  // view switch (per-device convenience)
+  const V=[["weeks","По неделям плана"],["course","По порядку курса"]];let view=lsGet(KEY+".rtlview")==="course"?"course":"weeks";
+  const sw=$("#rtlview");
+  function apply(){$("#rtl-weeks").hidden=view!=="weeks";$("#rtl-course").hidden=view!=="course";sw.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===view)));}
+  V.forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.className="chip";b.dataset.v=v;b.textContent=l;b.addEventListener("click",()=>{view=v;lsSet(KEY+".rtlview",v==="weeks"?null:v);apply();});sw.appendChild(b);});
+  apply();refreshRtl();
 }
 function refreshRtl(){
   document.querySelectorAll(".rtl-chk").forEach(b=>b.closest("li").classList.toggle("done",!!state.done[b.dataset.key]));

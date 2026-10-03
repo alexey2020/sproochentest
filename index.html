@@ -219,6 +219,10 @@ tr:first-child th{border-top:0}
 .gram-t{margin-top:14px}
 .gram-t td:not(:first-child),.gram-t th:not(:first-child){font-style:italic}
 .gram-t tr:first-child th{font-style:normal}
+.tr{display:block;font-size:14px;color:var(--muted);font-style:normal;font-weight:400;margin-top:2px}
+.deck .tr{font-size:16px;margin-top:6px}
+.sim-stage .tr{font-size:16px;margin-top:-4px}
+body.no-tr .tr{display:none}
 .note{border-left:4px solid var(--sun);padding:8px 14px;background:color-mix(in srgb,var(--sun) 12%,var(--paper));border-radius:0 var(--radius-s) var(--radius-s) 0;margin:12px 0}
 footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -307,6 +311,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 
 <section class="panel" id="p-topics" hidden>
   <p class="lead">Восемнадцать тем Gespréich: все бытовые темы A2 плюс два официальных примера INL 2026 года — «Schlof an Entspanung» и «Fester». Для каждой — вопросы экзаменатора и каркас ответа. Звёздочка — фраза выходит без паузы.</p>
+  <div class="row" style="margin-top:8px"><button class="chip trtoggle" type="button" aria-pressed="true">Транскрипция</button></div>
   <div class="chips" id="topicchips"></div>
   <div class="card" id="topiccard"></div>
   <div class="grid2" style="margin-top:14px">
@@ -342,14 +347,14 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 </section>
 
 <section class="panel" id="p-train" hidden>
-  <div class="chips" id="trainchips"></div>
+  <div class="row" style="justify-content:space-between;align-items:flex-start"><div class="chips" id="trainchips"></div><button class="chip trtoggle" type="button" aria-pressed="true" style="margin-top:10px">Транскрипция</button></div>
 
   <div id="t-cards">
     <div class="card">
       <div class="chips" id="cardchips"></div>
       <div class="deck" id="deck" tabindex="0" role="button" aria-label="Карточка, нажми чтобы перевернуть">
         <div class="meta"><span id="dtopic">—</span><span id="dcount">—</span></div>
-        <div><div class="front" id="dfront">—</div><div class="back" id="dback" hidden>—</div></div>
+        <div><div class="front" id="dfront">—</div><div class="tr" id="dtr"></div><div class="back" id="dback" hidden>—</div><div class="tr" id="dtr2"></div></div>
         <div class="hint" id="dhint">Нажми, чтобы перевернуть</div>
       </div>
       <div class="row" style="margin-top:12px;justify-content:space-between">
@@ -366,6 +371,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       <p class="muted">Как на экзамене: две темы на выбор, пять минут беседы, затем сцена для описания и ещё пять минут. Включи диктофон на телефоне и говори вслух. Вопросы переключай сам — экзаменатор не ждёт.</p>
       <div class="sim-stage" id="simstage">
         <div class="sim-q" id="simq">Выбери две темы — или положись на случай</div>
+        <div class="tr" id="simtr"></div>
         <div class="sim-ru" id="simru"></div>
         <div class="timer" id="simtimer">5:00</div>
         <div class="row" style="justify-content:center" id="simctl"><button class="btn" id="simstart">Начать симуляцию</button></div>
@@ -768,6 +774,54 @@ const RESOURCES = [
   ["Guichet.lu — условия","https://guichet.public.lu/en/citoyens/citoyennete/nationalite-luxembourgeoise/acquisition-recouvrement/conditions-prealables.html","Полный список требований"]]}
 ];
 
+/* ============ TRANSCRIPTION ============ */
+/* Approximate Cyrillic reading of Luxembourgish spelling: digraphs, ch/g by neighbouring vowel, s voiced before vowels,
+   final devoicing, final -er as «а». Loanwords and irregular words go through TR_EXC. Stress is not marked. */
+const TR_EXC={
+  "supermarché":"зюпэрмаршэ","appartement":"апартэман","quartier":"картье","congé":"конжэ","reunioun":"рэюньоун",
+  "rendez-vous":"рандэву","weekend":"уикэнт","weekender":"уикэнда","computer":"компьюта","computeren":"компьютэрэн",
+  "chef":"шэф","gare":"гар","vakanz":"ваканц","vëlo":"вэло","video":"видэо","handy":"хэнди","film":"фильм","filmer":"фильма",
+  "serien":"зэриэн","team":"тим","internet":"интэрнэт","bus":"бус","cours":"кур","fitness":"фитнэс","tëlee":"тэлэ",
+  "chrëschtdag":"крэщтдах","chrëschtmaart":"крэщтмарт","bestuet":"бэштуэт","z'entspanen":"цэнтшпанэн","entspanung":"энтшпанунг",
+  "nationalfeierdag":"нацьоналфэйэрдах","agreabel":"аграбэл","medikament":"мэдикамэнт","pullover":"пуловэ","jackett":"жакэт",
+  "europa":"ойропа","englesch":"энглэш","technik":"тэщник","noperschaft":"нопэшафт","noperen":"нопэрэн","sproochentest":"шпрохэнтэст",
+  "e":"э","en":"эн","eng":"энг","et":"эт","ech":"эщ","dech":"дэщ","mech":"мэщ","iech":"иэщ","sech":"зэщ",
+  "d'accord":"дакор","merci":"мэрси","ass":"ас","dass":"дас","datt":"дат","paräis":"парэйс","spuenien":"шпуэниэн",
+  "theater":"тэатэр","der":"да","sechs":"зэкс","ursprénglech":"уршпрэнглэщ","loyer":"луайе","loyeren":"луайерэн","loyere":"луайерэ",
+  "spadséieren":"шпацэйэрэн","spadséiere":"шпацэйэрэ","invitéieren":"инвитэйэрэн","invitéiere":"инвитэйэрэ","verstoen":"фэрштоэн","verstanen":"фэрштанэн",
+  "aussprooch":"аусшпрох","beispill":"бэйшпил","juni":"юни","garage":"гараж","restaurant":"рэсторан","musée":"мюзэ","tram":"трам","stau":"штау"
+};
+const TR_V="aeiouäëéèêüöyâîôû";
+const TR_DI=[["tsch","ч"],["ng","нг"],["ju","ю"],["ja","я"],["sch","ш"],["äi","ай"],["äu","ой"],["eu","ой"],["ei","эй"],["éi","эй"],["ie","иэ"],["ue","уэ"],["ou","оу"],["au","ау"],["oi","ой"],["aa","а"],["ee","э"],["éé","э"],["oo","о"],["ii","и"],["uu","у"],["qu","кв"],["ph","ф"],["th","т"],["ck","к"],["tz","ц"],["dt","т"]];
+const TR_1={a:"а",e:"э",ë:"э",é:"э",è:"э",ê:"э",ä:"э",i:"и",o:"о",u:"у",ü:"ю",ö:"ё",y:"и",â:"а",î:"и",ô:"о",û:"у",
+  b:"б",d:"д",f:"ф",k:"к",l:"л",m:"м",n:"н",p:"п",r:"р",t:"т",v:"ф",w:"в",z:"ц",j:"й",x:"кс",h:"х"};
+function trWord(w0){
+  const w=w0.toLowerCase();
+  if(TR_EXC[w])return TR_EXC[w];
+  if(/^[dz]'./.test(w)){const p=w[0]==="d"?"д":"ц",rest=trWord(w.slice(2));return p==="д"&&/^[дт]/.test(rest)?rest:p+rest;}
+  let tail="",s=w.replace(/'/g,"");
+  if(s.length>=3&&s.endsWith("er")){s=s.slice(0,-2);tail="а";}
+  const isV=c=>!!c&&TR_V.includes(c);
+  let out="",i=0;
+  while(i<s.length){
+    const c=s[i],prev=s[i-1],next=s[i+1];
+    if(i===0&&(s.startsWith("st")||s.startsWith("sp"))&&!s.startsWith("sch")){out+=s[1]==="t"?"шт":"шп";i+=2;continue;}
+    if(s.startsWith("ch",i)){const p=s[i-1];out+=i===0?"к":"aou".includes(p)?"х":"щ";i+=2;continue;}
+    const di=TR_DI.find(([a])=>s.startsWith(a,i));
+    if(di){out+=di[1];i+=di[0].length;continue;}
+    if(!isV(c)&&c===prev){i++;continue;}
+    const last=i===s.length-1||(i===s.length-2&&s[i+1]===c);
+    if(c==="s"){out+=(i===0||isV(prev)||"lnrm".includes(prev))&&isV(next)?"з":"с";i++;continue;}
+    if(c==="g"){out+=(last&&!tail)||next==="t"||next==="s"?("aou".includes(prev)?"х":"щ"):"г";i++;continue;}
+    if(c==="c"){out+="eiéëè".includes(next)?"с":"к";i++;continue;}
+    if(c==="h"&&isV(prev)&&!isV(next)){i++;continue;}
+    if(last&&!tail&&(c==="b"||c==="d")){out+=c==="b"?"п":"т";i++;continue;}
+    out+=TR_1[c]||c;i++;
+  }
+  return out+tail;
+}
+function tr(text){return "["+text.toLowerCase().replace(/w\.e\.g\./g,"wann ech gelift").replace(/[a-zäëéèêüöyâîôû'-]+/g,w=>TR_EXC[w]?TR_EXC[w]:w.split("-").map(p=>p?trWord(p):"").join("-").replace(/^-|-$/g,"")).replace(/\s+/g," ").trim()+"]";}
+
 /* ============ STATE ============ */
 const KEY="sproochentest.feb2027.v1";
 /* done/known/days are sets; ts["done:"+key] is the time of the last change, so an unchecked item stays unchecked after a merge.
@@ -953,11 +1007,11 @@ function buildPlan(){
 
 /* ============ TOPICS ============ */
 let curTopic=WEEKS[CUR].topic==="all"?"iwwer":WEEKS[CUR].topic;
-function rows(arr,withStar,prefix){
+function rows(arr,withStar,prefix,withTr){
   return arr.map((p,i)=>{
     const key=prefix?prefix+"-"+i:null;
     const known=key&&state.known[key];
-    return '<div class="'+(withStar?"prow":"qrow")+(known?" known":"")+'" '+(key?'data-k="'+key+'"':'')+'><div class="l">'+esc(p[0])+'</div><div class="r">'+esc(p[1])+'</div>'+(withStar?'<button class="star" type="button" aria-label="выучено" aria-pressed="'+(known?"true":"false")+'">'+(known?"★":"☆")+'</button>':'')+'</div>';
+    return '<div class="'+(withStar?"prow":"qrow")+(known?" known":"")+'" '+(key?'data-k="'+key+'"':'')+'><div class="l">'+esc(p[0])+(withTr?'<span class="tr">'+esc(tr(p[0]))+'</span>':'')+'</div><div class="r">'+esc(p[1])+'</div>'+(withStar?'<button class="star" type="button" aria-label="выучено" aria-pressed="'+(known?"true":"false")+'">'+(known?"★":"☆")+'</button>':'')+'</div>';
   }).join("");
 }
 function bindStars(host){
@@ -971,9 +1025,9 @@ function buildTopics(){
   const ch=$("#topicchips");ch.innerHTML="";
   TOPICS.forEach(t=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=t.lb;b.dataset.k=t.k;b.setAttribute("aria-pressed",String(t.k===curTopic));b.addEventListener("click",()=>showTopic(t.k));ch.appendChild(b);});
   showTopic(curTopic);
-  $("#genq").innerHTML=rows(QUESTIONS_GENERIC,false);
-  $("#connect").innerHTML=rows(CONNECT,false);
-  $("#rescue").innerHTML=rows(RESCUE,true,"rescue");bindStars($("#rescue"));
+  $("#genq").innerHTML=rows(QUESTIONS_GENERIC,false,null,true);
+  $("#connect").innerHTML=rows(CONNECT,false,null,true);
+  $("#rescue").innerHTML=rows(RESCUE,true,"rescue",true);bindStars($("#rescue"));
 }
 function showTopic(k){
   curTopic=k;const t=topicByKey(k);
@@ -981,8 +1035,8 @@ function showTopic(k){
   const wk=WEEKS.filter(w=>w.topic===k).map(w=>w.n);
   const c=$("#topiccard");
   c.innerHTML='<div class="row" style="justify-content:space-between"><h2>'+esc(t.lb)+' <span class="muted" style="font-weight:500;font-size:18px">'+esc(t.ru)+'</span></h2>'+(wk.length?'<span class="pill">неделя '+wk.join(", ")+'</span>':'')+'</div>'
-   +'<h3 style="margin-top:14px">Что спросит экзаменатор</h3><div>'+rows(t.q,false)+'</div>'
-   +'<h3 style="margin-top:16px">Каркас ответа</h3><div class="plist">'+rows(t.p,true,"t-"+k)+'</div>'
+   +'<h3 style="margin-top:14px">Что спросит экзаменатор</h3><div>'+rows(t.q,false,null,true)+'</div>'
+   +'<h3 style="margin-top:16px">Каркас ответа</h3><div class="plist">'+rows(t.p,true,"t-"+k,true)+'</div>'
    +'<p class="muted" style="margin-top:12px">Подставь свои данные, произнеси вслух 20 раз и закончи встречным вопросом: <i>An Dir?</i></p>';
   bindStars(c);
 }
@@ -1083,10 +1137,11 @@ function buildDeck(){
 }
 function render(){
   const F=$("#dfront"),B=$("#dback"),T=$("#dtopic"),C=$("#dcount"),H=$("#dhint");
-  if(!deck.length){F.textContent="Выбери хотя бы одну группу";B.hidden=true;T.textContent="—";C.textContent="—";return;}
+  if(!deck.length){F.textContent="Выбери хотя бы одну группу";B.hidden=true;$("#dtr").textContent=$("#dtr2").textContent="";T.textContent="—";C.textContent="—";return;}
   const c=deck[idx];T.textContent=c.g+(state.known[c.key]?" · ★":"");C.textContent=(idx+1)+" / "+deck.length;
   F.textContent=reverse?c.ru:c.lb;F.style.fontStyle=reverse?"normal":"italic";
   B.textContent=reverse?c.lb:c.ru;B.style.fontStyle=reverse?"italic":"normal";B.hidden=!flipped;
+  $("#dtr").textContent=reverse?"":tr(c.lb);$("#dtr2").textContent=reverse&&flipped?tr(c.lb):"";
   H.textContent=flipped?"Произнеси вслух и жми «Дальше»":"Нажми, чтобы перевернуть · ← → листать";
   $("#dknow").textContent=state.known[c.key]?"★ Знаю":"☆ Знаю";
 }
@@ -1117,7 +1172,7 @@ function simLog(){
 }
 function pick2(){const a=[...TOPICS];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a.slice(0,2);}
 function simChoose(){
-  stopTimer("sim");sim={stage:0,topic:null,qi:0};$("#simreview").hidden=true;
+  stopTimer("sim");sim={stage:0,topic:null,qi:0};$("#simreview").hidden=true;$("#simtr").textContent="";
   const [a,b]=pick2();
   $("#simq").textContent="Выбери тему для беседы";$("#simru").textContent="На экзамене — одна из двух. Выбирай ту, где есть заготовка.";$("#simtimer").textContent="5:00";$("#simtimer").classList.remove("low");
   const ctl=$("#simctl");ctl.innerHTML="";
@@ -1126,7 +1181,7 @@ function simChoose(){
 function simTalk(t){
   sim.stage=1;sim.topic=t;sim.qi=0;
   const qs=[...t.q,QUESTIONS_GENERIC[Math.floor(Math.random()*QUESTIONS_GENERIC.length)],QUESTIONS_GENERIC[2]];
-  function show(){const q=qs[sim.qi];$("#simq").textContent=q[0];$("#simru").textContent=q[1];}
+  function show(){const q=qs[sim.qi];$("#simq").textContent=q[0];$("#simtr").textContent=tr(q[0]);$("#simru").textContent=q[1];}
   show();
   const ctl=$("#simctl");ctl.innerHTML="";
   const nx=document.createElement("button");nx.className="btn";nx.textContent="Следующий вопрос →";nx.addEventListener("click",()=>{sim.qi=(sim.qi+1)%qs.length;show();});
@@ -1135,7 +1190,7 @@ function simTalk(t){
   startTimer("sim",300,$("#simtimer"),simPhoto);
 }
 function simPhoto(){
-  stopTimer("sim");sim.stage=2;
+  stopTimer("sim");sim.stage=2;$("#simtr").textContent="";
   const s=SCENES[Math.floor(Math.random()*SCENES.length)];
   $("#simq").textContent="Фото: "+s;$("#simru").textContent="Шесть шагов: общий план → где → кто и где → что делают → связь с собой → вывод с «well».";
   const ctl=$("#simctl");ctl.innerHTML="";
@@ -1143,7 +1198,7 @@ function simPhoto(){
   startTimer("sim",300,$("#simtimer"),simEnd);
 }
 function simEnd(){
-  stopTimer("sim");sim.stage=3;
+  stopTimer("sim");sim.stage=3;$("#simtr").textContent="";
   $("#simq").textContent="Готово. Прослушай запись и оцени себя";$("#simru").textContent="Тема: "+sim.topic.lb;$("#simtimer").textContent="—";
   const ctl=$("#simctl");ctl.innerHTML="";const ag=document.createElement("button");ag.className="btn ghost";ag.textContent="Ещё раз";ag.addEventListener("click",simChoose);ctl.appendChild(ag);
   $("#simreview").hidden=false;$("#simsave").disabled=false;$("#crit").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed","false"));
@@ -1205,6 +1260,9 @@ function refreshStats(){
 /* ============ BOOT ============ */
 localLoad();
 buildHero();buildTabs();buildToday();buildPlan();buildTopics();buildPhoto();buildGram();buildTrain();buildListen();buildRes();
+function applyTr(on){document.body.classList.toggle("no-tr",!on);document.querySelectorAll(".trtoggle").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.textContent="Транскрипция: "+(on?"вкл":"выкл");});}
+let showTr=lsGet(KEY+".tr")!=="0";applyTr(showTr);
+document.querySelectorAll(".trtoggle").forEach(b=>b.addEventListener("click",()=>{showTr=!showTr;lsSet(KEY+".tr",showTr?null:"0");applyTr(showTr);}));
 paintStrip();refreshStats();
 
 /* ============ SYNC ============ */
@@ -1246,7 +1304,7 @@ function newCode(){
 }
 function refreshAll(){
   syncChecks();buildToday();refreshStats();render();showTopic(curTopic);showGram(curGram);
-  $("#rescue").innerHTML=rows(RESCUE,true,"rescue");bindStars($("#rescue"));
+  $("#rescue").innerHTML=rows(RESCUE,true,"rescue",true);bindStars($("#rescue"));
   $("#photowords").innerHTML=rows(PHOTO_WORDS,true,"photo");bindStars($("#photowords"));
   $("#quizbest").textContent="лучший: "+(state.quizBest?state.quizBest+" / "+QUIZ.length:"—");
 }

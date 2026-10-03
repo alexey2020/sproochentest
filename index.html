@@ -210,6 +210,10 @@ tr:first-child th{border-top:0}
 .stat{display:flex;align-items:center;gap:14px}
 .stat .n{font-size:28px;font-weight:800;letter-spacing:-0.02em;line-height:1}
 .stat .t{color:var(--muted);font-size:14px}
+.sync-code{font-size:20px;font-weight:800;letter-spacing:.01em;word-break:break-all}
+.sync-in{font:inherit;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:999px;padding:9px 14px;min-width:0;flex:1 1 220px}
+.sync-st{font-size:14px;color:var(--muted);margin-top:8px}
+.sync-st.err{color:var(--bad)}
 .note{border-left:4px solid var(--sun);padding:8px 14px;background:color-mix(in srgb,var(--sun) 12%,var(--paper));border-radius:0 var(--radius-s) var(--radius-s) 0;margin:12px 0}
 footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -267,6 +271,10 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
           <div class="stat"><div><div class="n" id="knownN">0</div><div class="t">фраз и слов со звёздочкой</div></div></div>
           <div class="stat"><div><div class="n" id="listenN">0</div><div class="t">разборов аудио</div></div></div>
         </div>
+      </div>
+      <div class="card">
+        <h3>Синхронизация между устройствами</h3>
+        <div id="syncbody"></div>
       </div>
     </div>
   </div>
@@ -427,7 +435,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       </div>
     </div>
   </div>
-  <footer style="margin-top:22px">Формат, критерии и материалы — по данным INLL и Министерства образования на октябрь 2026. Люксембургские фразы здесь — рабочие образцы уровня A2: проговори их с преподавателем или носителем, прежде чем заучивать. Прогресс хранится в этом браузере.</footer>
+  <footer style="margin-top:22px">Формат, критерии и материалы — по данным INLL и Министерства образования на октябрь 2026. Люксембургские фразы здесь — рабочие образцы уровня A2: проговори их с преподавателем или носителем, прежде чем заучивать. Прогресс хранится в этом браузере, а с кодом синхронизации — ещё и в облаке, откуда его подхватят другие твои устройства.</footer>
 </section>
 </div>
 <script>
@@ -678,16 +686,42 @@ const RESOURCES = [
 
 /* ============ STATE ============ */
 const KEY="sproochentest.feb2027.v1";
-let state={done:{},known:{},days:{},listen:0,quizBest:0,sims:[]};
-function localLoad(){try{const r=localStorage.getItem(KEY);if(r)state=Object.assign(state,JSON.parse(r));}catch(e){}}
-function localSave(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
-let db=null,uid=null,saving=false,dirty=false;
-async function flush(){
-  if(!db||!uid||saving)return; saving=true;dirty=false;
-  try{await db.doc("data/users/"+uid+"/progress").set(state);}catch(e){}
-  saving=false; if(dirty)flush();
+/* done/known/days are sets; ts["done:"+key] is the time of the last change, so an unchecked item stays unchecked after a merge.
+   listenBy counts per device so increments on two devices add up. */
+let state={done:{},known:{},days:{},ts:{},listenBy:{},quizBest:0,sims:[]};
+const SETS=["done","known","days"];
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}
+const DEVICE=lsGet(KEY+".device")||(()=>{const id=Math.random().toString(36).slice(2,10);lsSet(KEY+".device",id);return id;})();
+function normalize(s){
+  s=Object.assign({done:{},known:{},days:{},ts:{},listenBy:{},quizBest:0,sims:[]},s||{});
+  if(s.listen&&!Object.keys(s.listenBy).length)s.listenBy={[DEVICE]:s.listen};
+  delete s.listen;
+  s.sims=(s.sims||[]).map(x=>x.id?x:Object.assign({id:x.d+"-"+x.t+"-"+x.ok},x));
+  return s;
 }
-function persist(){localSave(); if(db&&uid){saving?dirty=true:flush();} refreshStats();}
+function localLoad(){try{const r=lsGet(KEY);if(r)state=normalize(JSON.parse(r));}catch(e){}}
+function localSave(){lsSet(KEY,JSON.stringify(state));}
+function setFlag(f,k,on){if(on)state[f][k]=1;else delete state[f][k];state.ts[f+":"+k]=Date.now();}
+function listenTotal(){return Object.values(state.listenBy).reduce((a,b)=>a+b,0);}
+function mergeState(a,b){
+  const o={done:{},known:{},days:{},ts:{},listenBy:{},quizBest:Math.max(a.quizBest||0,b.quizBest||0),sims:[]};
+  SETS.forEach(f=>{
+    const ids=new Set();
+    [a,b].forEach(s=>{Object.keys(s[f]).forEach(k=>ids.add(k));Object.keys(s.ts).forEach(id=>{if(id.startsWith(f+":"))ids.add(id.slice(f.length+1));});});
+    ids.forEach(k=>{
+      const id=f+":"+k,ta=a.ts[id]||0,tb=b.ts[id]||0;
+      const on=ta>tb?!!a[f][k]:tb>ta?!!b[f][k]:!!(a[f][k]||b[f][k]);
+      if(on)o[f][k]=1;
+      if(ta||tb)o.ts[id]=Math.max(ta,tb);
+    });
+  });
+  [a,b].forEach(s=>Object.entries(s.listenBy).forEach(([d,n])=>{o.listenBy[d]=Math.max(o.listenBy[d]||0,n);}));
+  const sims=new Map();[...a.sims,...b.sims].forEach(x=>sims.set(x.id,x));
+  o.sims=[...sims.values()].sort((x,y)=>x.id<y.id?-1:1).slice(-60);
+  return o;
+}
+function persist(){localSave();schedulePush();refreshStats();}
 
 /* ============ DATES ============ */
 const DAY=864e5;
@@ -761,7 +795,7 @@ function chk(key,text,onchange){
   b.setAttribute("aria-pressed",state.done[key]?"true":"false");
   b.innerHTML='<span class="box">'+tick+'</span><span class="lbl"></span>';
   b.querySelector(".lbl").textContent=text;
-  b.addEventListener("click",()=>{if(state.done[key])delete state.done[key];else state.done[key]=1;persist();syncChecks();if(onchange)onchange();});
+  b.addEventListener("click",()=>{setFlag("done",key,!state.done[key]);persist();syncChecks();if(onchange)onchange();});
   b.dataset.key=key;return b;
 }
 function syncChecks(){document.querySelectorAll(".chk[data-key]").forEach(b=>b.setAttribute("aria-pressed",state.done[b.dataset.key]?"true":"false"));paintStrip();document.querySelectorAll("details.week").forEach(det=>updateWeekPct(det));}
@@ -792,7 +826,7 @@ function buildToday(){
   const mk=$("#markday");
   const k=iso(NOW);
   mk.textContent=state.days[k]?"Сегодня отмечено ✓":"Сегодня занимался";
-  mk.onclick=()=>{if(state.days[k])delete state.days[k];else state.days[k]=1;persist();buildToday();};
+  mk.onclick=()=>{setFlag("days",k,!state.days[k]);persist();buildToday();};
   // streak
   let s=0;for(let i=0;;i++){const dt=new Date(NOW.getTime()-i*DAY);if(state.days[iso(dt)])s++;else if(i===0)continue;else break;if(dt<start)break;}
   $("#streak").textContent=s;$("#daysdone").textContent=Object.keys(state.days).length;
@@ -826,7 +860,7 @@ function buildPlan(){
     });
   });
   $("#openall").addEventListener("click",e=>{const all=[...document.querySelectorAll("details.week")];const open=all.some(x=>!x.open);all.forEach(x=>x.open=open);e.currentTarget.textContent=open?"Свернуть все недели":"Развернуть все недели";});
-  $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;state.done={};persist();syncChecks();buildToday();});
+  $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;Object.keys(state.done).forEach(k=>setFlag("done",k,false));persist();syncChecks();buildToday();});
   const gt=$("#gramtbl");gt.innerHTML=GRAMMAR.map(g=>"<tr><th>"+esc(g[0])+"</th><td>"+esc(g[1])+"</td></tr>").join("");
 }
 
@@ -842,7 +876,7 @@ function rows(arr,withStar,prefix){
 function bindStars(host){
   host.querySelectorAll(".prow[data-k] .star").forEach(b=>b.addEventListener("click",()=>{
     const row=b.closest(".prow"),k=row.dataset.k;
-    if(state.known[k])delete state.known[k];else state.known[k]=1;
+    setFlag("known",k,!state.known[k]);
     row.classList.toggle("known",!!state.known[k]);b.textContent=state.known[k]?"★":"☆";b.setAttribute("aria-pressed",String(!!state.known[k]));persist();
   }));
 }
@@ -919,7 +953,7 @@ function buildCards(){
   deckEl.addEventListener("click",flip);
   deckEl.addEventListener("keydown",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();flip();}if(e.key==="ArrowRight")next();if(e.key==="ArrowLeft")prev();});
   $("#dnext").addEventListener("click",next);$("#dprev").addEventListener("click",prev);$("#dshuffle").addEventListener("click",buildDeck);
-  $("#dknow").addEventListener("click",()=>{if(!deck.length)return;const c=deck[idx];if(state.known[c.key])delete state.known[c.key];else state.known[c.key]=1;persist();render();});
+  $("#dknow").addEventListener("click",()=>{if(!deck.length)return;const c=deck[idx];setFlag("known",c.key,!state.known[c.key]);persist();render();});
   $("#dflipdir").addEventListener("click",e=>{reverse=!reverse;flipped=false;e.currentTarget.textContent=reverse?"Люксембургский первым":"Перевод первым";render();});
 }
 function syncChips(){$("#cardchips").querySelectorAll(".chip[data-g]").forEach(b=>b.setAttribute("aria-pressed",String(active.has(b.dataset.g))));}
@@ -951,7 +985,7 @@ function buildSim(){
   $("#simstart").addEventListener("click",simChoose);
   $("#simsave").addEventListener("click",()=>{
     const ok=[...$("#crit").querySelectorAll("button")].filter(b=>b.getAttribute("aria-pressed")==="true").length;
-    state.sims.push({d:iso(NOW),t:sim.topic.k,ok});state.sims=state.sims.slice(-60);persist();
+    state.sims.push({id:iso(NOW)+"-"+Date.now(),d:iso(NOW),t:sim.topic.k,ok});state.sims=state.sims.slice(-60);persist();
     $("#simlog").textContent="Записано: "+sim.topic.lb+", "+ok+"/7"+(ok<=3?" — в список слабых тем":"");
     $("#simsave").disabled=true;
   });
@@ -1024,7 +1058,7 @@ function buildQuiz(){
 function listenGoal(){const ph=phaseOf(CUR).id;return {p1:1,p2:3,p3:3,p4:5}[ph];}
 function buildListen(){
   $("#listengoal").textContent=listenGoal()+" в неделю";
-  $("#listenadd").addEventListener("click",()=>{state.listen++;persist();});
+  $("#listenadd").addEventListener("click",()=>{state.listenBy[DEVICE]=(state.listenBy[DEVICE]||0)+1;persist();});
 }
 
 /* ============ RESOURCES ============ */
@@ -1045,7 +1079,7 @@ function refreshStats(){
   $("#pct").textContent=pct+"%";
   const C=2*Math.PI*26;const fg=$("#ringfg");fg.style.strokeDasharray=C;fg.style.strokeDashoffset=C*(1-pct/100);
   $("#knownN").textContent=Object.keys(state.known).length;
-  $("#listenN").textContent=state.listen;$("#listenN2").textContent=state.listen;
+  $("#listenN").textContent=listenTotal();$("#listenN2").textContent=listenTotal();
   simLog&&$("#simlog")&&simLog();
 }
 
@@ -1054,19 +1088,122 @@ localLoad();
 buildHero();buildTabs();buildToday();buildPlan();buildTopics();buildPhoto();buildTrain();buildListen();buildRes();
 paintStrip();refreshStats();
 
-(async()=>{
-  try{const [u,dbx]=await Promise.all([window.claude?.use?.("user"),window.claude?.use?.("db")]);
-    if(!u||!dbx)return;uid=await u.id();db=dbx;
-    const snap=await db.doc("data/users/"+uid+"/progress").get();
-    if(snap&&snap.exists){
-      const r=snap.data()||{};
-      state.done=Object.assign({},r.done||{},state.done);state.known=Object.assign({},r.known||{},state.known);state.days=Object.assign({},r.days||{},state.days);
-      state.listen=Math.max(state.listen,r.listen||0);state.quizBest=Math.max(state.quizBest,r.quizBest||0);
-      if((r.sims||[]).length>state.sims.length)state.sims=r.sims;
-      localSave();syncChecks();buildToday();refreshStats();render();
-    }else if(Object.keys(state.done).length||Object.keys(state.known).length||Object.keys(state.days).length){flush();}
-  }catch(e){}
-})();
+/* ============ SYNC ============ */
+/* Firestore over REST, one document per sync code. The key is public by design; access is limited by Firestore rules. */
+const FB={key:"AIzaSyBl9pqck0MfwqIcBaDnm4twoU-cmIoUpRs",base:"https://firestore.googleapis.com/v1/projects/sproochentest-26ed7/databases/(default)/documents/progress/"};
+const CODE_RE=/^[a-z]+-[a-z]+-[a-z]+-[0-9]{4}$/;
+const CODE_WORDS=["moien","kaffi","gaart","brout","kees","mamm","papp","zuch","bus","tram","sonn","reen","wand","wanter","summer","hierscht","haus","stad","bam","bierg","fesch","hond","kaz","vull","blumm","dag","nuecht","mier","floss","kand","maart","gare","auto","strooss","dier","bett","kichen","zopp","uebst","waasser","fleesch","kaart","buch","schued","fouer","owend","schong","mutz"];
+let syncCode=lsGet(KEY+".sync"),syncBusy=false,syncAgain=false,pushTimer=null,lastSync=null,syncErr=null,syncMode=null;
+
+function stable(o){return JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a<b?-1:1)):v);}
+function b64(u8){let s="";for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s);}
+async function pack(o){
+  const json=JSON.stringify(o);
+  if(!window.CompressionStream)return "j:"+json;
+  const st=new Blob([json]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+  return "z:"+b64(new Uint8Array(await new Response(st).arrayBuffer()));
+}
+async function unpack(s){
+  if(s.startsWith("j:"))return JSON.parse(s.slice(2));
+  const u8=Uint8Array.from(atob(s.slice(2)),c=>c.charCodeAt(0));
+  const st=new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return JSON.parse(await new Response(st).text());
+}
+async function remoteGet(code){
+  const r=await fetch(FB.base+code+"?key="+FB.key,{cache:"no-store"});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error("сервер ответил "+r.status);
+  const j=await r.json();
+  return normalize(await unpack(j.fields.s.stringValue));
+}
+async function remotePut(code,st){
+  const body={fields:{v:{integerValue:"1"},s:{stringValue:await pack(st)},t:{integerValue:String(Date.now())}}};
+  const r=await fetch(FB.base+code+"?key="+FB.key,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true});
+  if(!r.ok)throw new Error("сервер ответил "+r.status);
+}
+function newCode(){
+  const r=crypto.getRandomValues(new Uint32Array(4));
+  return [0,1,2].map(i=>CODE_WORDS[r[i]%CODE_WORDS.length]).join("-")+"-"+String(r[3]%10000).padStart(4,"0");
+}
+function refreshAll(){
+  syncChecks();buildToday();refreshStats();render();showTopic(curTopic);
+  $("#rescue").innerHTML=rows(RESCUE,true,"rescue");bindStars($("#rescue"));
+  $("#photowords").innerHTML=rows(PHOTO_WORDS,true,"photo");bindStars($("#photowords"));
+  $("#quizbest").textContent="лучший: "+(state.quizBest?state.quizBest+" / "+QUIZ.length:"—");
+}
+/* pull, merge, push only if something differs */
+async function sync(){
+  if(!syncCode)return;
+  if(syncBusy){syncAgain=true;return;}
+  syncBusy=true;clearTimeout(pushTimer);pushTimer=null;renderSync();
+  try{
+    const remote=await remoteGet(syncCode);
+    const merged=remote?mergeState(state,remote):state;
+    if(stable(merged)!==stable(state)){state=merged;localSave();refreshAll();}
+    if(!remote||stable(merged)!==stable(remote))await remotePut(syncCode,state);
+    lastSync=new Date();syncErr=null;
+  }catch(e){syncErr=e;}
+  syncBusy=false;renderSync();
+  if(syncAgain){syncAgain=false;sync();}
+}
+function schedulePush(){if(!syncCode)return;clearTimeout(pushTimer);pushTimer=setTimeout(sync,1500);}
+function setCode(c){syncCode=c;lsSet(KEY+".sync",c);}
+
+function syncStatus(){
+  if(syncErr)return navigator.onLine===false?"Нет сети. Отметки сохранены здесь и уйдут в облако, когда связь появится.":"Не удалось синхронизироваться: "+syncErr.message+". Попробую снова при следующем изменении.";
+  if(syncBusy&&!lastSync)return "Синхронизирую…";
+  if(lastSync)return "Синхронизировано в "+String(lastSync.getHours()).padStart(2,"0")+":"+String(lastSync.getMinutes()).padStart(2,"0");
+  return "";
+}
+function renderSync(){
+  const h=$("#syncbody");
+  if(syncCode){
+    if(!h.querySelector(".sync-code")){
+      h.innerHTML='<p class="muted" style="margin:4px 0 8px">Код твоего прогресса. Введи его на телефоне или другом компьютере — отметки станут общими. Сохрани код: без него к прогрессу не подключиться.</p>'
+        +'<div class="row" style="justify-content:space-between"><div class="sync-code"></div><div class="row"><button class="btn ghost" id="synccopy">Скопировать</button><button class="btn ghost" id="syncoff">Отключить здесь</button></div></div><div class="sync-st"></div>';
+      h.querySelector(".sync-code").textContent=syncCode;
+      $("#synccopy").addEventListener("click",async e=>{const b=e.currentTarget;try{await navigator.clipboard.writeText(syncCode);b.textContent="Скопировано";}catch(_){b.textContent="Выдели код вручную";}setTimeout(()=>b.textContent="Скопировать",2000);});
+      $("#syncoff").addEventListener("click",()=>{if(!confirm("Отключить синхронизацию на этом устройстве? Прогресс останется и здесь, и в облаке. Чтобы подключиться снова, понадобится код."))return;setCode(null);lastSync=null;syncErr=null;h.innerHTML="";renderSync();});
+    }
+    const st=h.querySelector(".sync-st");st.textContent=syncStatus();st.classList.toggle("err",!!syncErr);
+    return;
+  }
+  if(syncMode==="enter"){
+    h.innerHTML='<p class="muted" style="margin:4px 0 8px">Введи код с другого устройства, например <i>moien-kaffi-gaart-7342</i>. Отметки отсюда и оттуда объединятся.</p>'
+      +'<form class="row" id="syncform"><input class="sync-in" id="syncin" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="слово-слово-слово-1234" aria-label="Код синхронизации"><button class="btn" type="submit">Подключить</button><button class="btn ghost" type="button" id="synccancel">Отмена</button></form><div class="sync-st"></div>';
+    const st=h.querySelector(".sync-st");
+    $("#synccancel").addEventListener("click",()=>{syncMode=null;renderSync();});
+    $("#syncform").addEventListener("submit",async e=>{
+      e.preventDefault();
+      const c=$("#syncin").value.trim().toLowerCase().replace(/[\s_—–]+/g,"-").replace(/-+/g,"-");
+      st.classList.add("err");
+      if(!CODE_RE.test(c)){st.textContent="Код выглядит как три слова и четыре цифры через дефис.";return;}
+      st.classList.remove("err");st.textContent="Ищу…";
+      try{
+        const remote=await remoteGet(c);
+        if(!remote){st.classList.add("err");st.textContent="Такого кода нет. Проверь написание.";return;}
+        state=mergeState(state,remote);localSave();setCode(c);syncMode=null;h.innerHTML="";refreshAll();sync();
+      }catch(err){st.classList.add("err");st.textContent="Не получилось: "+err.message+". Проверь интернет.";}
+    });
+    $("#syncin").focus();
+    return;
+  }
+  h.innerHTML='<p class="muted" style="margin:4px 0 8px">Сейчас прогресс хранится только в этом браузере. Включи синхронизацию — получишь код из трёх слов и числа. Введи его на другом устройстве, и прогресс станет общим.</p>'
+    +'<div class="row"><button class="btn" id="syncon">Включить синхронизацию</button><button class="btn ghost" id="synchave">У меня уже есть код</button></div><div class="sync-st"></div>';
+  $("#synchave").addEventListener("click",()=>{syncMode="enter";renderSync();});
+  $("#syncon").addEventListener("click",async e=>{
+    const b=e.currentTarget,st=h.querySelector(".sync-st");b.disabled=true;st.classList.remove("err");st.textContent="Создаю код…";
+    try{
+      let c=null;for(let i=0;i<5&&!c;i++){const t=newCode();if(!(await remoteGet(t)))c=t;}
+      if(!c)throw new Error("не удалось подобрать свободный код");
+      await remotePut(c,state);setCode(c);lastSync=new Date();syncErr=null;h.innerHTML="";renderSync();
+    }catch(err){b.disabled=false;st.classList.add("err");st.textContent="Не получилось: "+err.message+". Проверь интернет.";}
+  });
+}
+renderSync();
+if(syncCode)sync();
+document.addEventListener("visibilitychange",()=>{if(!syncCode)return;if(document.visibilityState==="visible")sync();else if(pushTimer)sync();});
+window.addEventListener("online",()=>{if(syncCode)sync();});
 
 </script>
 </body>

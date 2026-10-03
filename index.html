@@ -778,7 +778,7 @@ const RESOURCES = [
 
 /* ============ TRANSCRIPTION ============ */
 /* Approximate Cyrillic reading of Luxembourgish spelling: digraphs, ch/g by neighbouring vowel, s voiced before vowels,
-   final devoicing, final -er as «а». Loanwords and irregular words go through TR_EXC. Stress is not marked. */
+   final devoicing, final -er as «а», r after i vocalised (Dir → диэ). Loanwords and irregular words go through TR_EXC. Stress is not marked. */
 const TR_EXC={
   "supermarché":"зюпэрмаршэ","appartement":"апартэман","quartier":"картье","congé":"конжэ","reunioun":"рэюньоун",
   "rendez-vous":"рандэву","weekend":"уикэнт","weekender":"уикэнда","computer":"компьюта","computeren":"компьютэрэн",
@@ -795,13 +795,14 @@ const TR_EXC={
 };
 const TR_V="aeiouäëéèêüöyâîôû";
 const TR_DI=[["tsch","ч"],["äe","э"],["ng","нг"],["ju","ю"],["ja","я"],["sch","ш"],["äi","ай"],["äu","ой"],["eu","ой"],["ei","эй"],["éi","эй"],["ie","иэ"],["ue","уэ"],["ou","оу"],["au","ау"],["oi","ой"],["aa","а"],["ee","э"],["éé","э"],["oo","о"],["ii","и"],["uu","у"],["qu","кв"],["ph","ф"],["th","т"],["ck","к"],["tz","ц"],["dt","т"]];
-const TR_1={a:"а",e:"э",ë:"э",é:"э",è:"э",ê:"э",ä:"э",i:"и",o:"о",u:"у",ü:"ю",ö:"ё",y:"и",â:"а",î:"и",ô:"о",û:"у",
+const TR_1={"":"иэ",a:"а",e:"э",ë:"э",é:"э",è:"э",ê:"э",ä:"э",i:"и",o:"о",u:"у",ü:"ю",ö:"ё",y:"и",â:"а",î:"и",ô:"о",û:"у",
   b:"б",d:"д",f:"ф",k:"к",l:"л",m:"м",n:"н",p:"п",r:"р",t:"т",v:"ф",w:"в",z:"ц",j:"й",x:"кс",h:"х"};
 function trWord(w0){
   const w=w0.toLowerCase();
   if(TR_EXC[w])return TR_EXC[w];
   if(/^[dz]'./.test(w)){const p=w[0]==="d"?"д":"ц",rest=trWord(w.slice(2));return p==="д"&&/^[дт]/.test(rest)?rest:p+rest;}
   let tail="",s=w.replace(/'/g,"");
+  s=s.replace(/(?<![eéä])ie?r(?![aeiouäëéèêüöy])/g,"");
   if(s.length>=3&&s.endsWith("er")){s=s.slice(0,-2);tail="а";}
   const isV=c=>!!c&&TR_V.includes(c);
   let out="",i=0;
@@ -816,7 +817,7 @@ function trWord(w0){
     if(c==="s"){out+=(i===0||isV(prev)||"lnrm".includes(prev))&&isV(next)?"з":"с";i++;continue;}
     if(c==="g"){out+=(last&&!tail)||next==="t"||next==="s"?("aou".includes(prev)?"х":"щ"):"г";i++;continue;}
     if(c==="c"){out+="eiéëè".includes(next)?"с":"к";i++;continue;}
-    if(c==="h"&&isV(prev)&&!isV(next)){i++;continue;}
+    if(c==="h"&&isV(prev)&&!isV(next)&&next!==""){i++;continue;}
     if(last&&!tail&&(c==="b"||c==="d")){out+=c==="b"?"п":"т";i++;continue;}
     out+=TR_1[c]||c;i++;
   }

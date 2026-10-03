@@ -214,6 +214,11 @@ tr:first-child th{border-top:0}
 .sync-in{font:inherit;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:999px;padding:9px 14px;min-width:0;flex:1 1 220px}
 .sync-st{font-size:14px;color:var(--muted);margin-top:8px}
 .sync-st.err{color:var(--bad)}
+.gram-rules{margin:10px 0 0;padding-left:20px}
+.gram-rules li{margin:6px 0}
+.gram-t{margin-top:14px}
+.gram-t td:not(:first-child),.gram-t th:not(:first-child){font-style:italic}
+.gram-t tr:first-child th{font-style:normal}
 .note{border-left:4px solid var(--sun);padding:8px 14px;background:color-mix(in srgb,var(--sun) 12%,var(--paper));border-radius:0 var(--radius-s) var(--radius-s) 0;margin:12px 0}
 footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -295,8 +300,8 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
   <div id="planhost"></div>
   <div class="card" style="margin-top:22px">
     <h3>Грамматический минимум для A2</h3>
-    <p class="muted" style="margin-top:4px">Этого хватает, чтобы закрыть устную часть. Всё остальное — роскошь.</p>
-    <div class="tbl"><table id="gramtbl"></table></div>
+    <p class="muted" style="margin-top:4px">Тринадцать правил, которых хватает, чтобы закрыть устную часть: таблицы спряжения, примеры и типичные ошибки.</p>
+    <button class="btn ghost" id="togram">Открыть вкладку «Грамматика» →</button>
   </div>
 </section>
 
@@ -328,6 +333,12 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       </div>
     </div>
   </div>
+</section>
+
+<section class="panel" id="p-gram" hidden>
+  <p class="lead">Весь грамматический минимум для устной части A2 — в порядке недель плана. В каждом правиле: зачем оно на экзамене, таблица, примеры и типичная ошибка. Звёздочка — пример выходит без паузы; отмеченные примеры синхронизируются вместе с остальным прогрессом.</p>
+  <div class="chips" id="gramchips"></div>
+  <div class="card" id="gramcard"></div>
 </section>
 
 <section class="panel" id="p-train" hidden>
@@ -398,7 +409,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       <hr class="soft">
       <div class="row" style="justify-content:space-between">
         <div class="stat"><div><div class="n" id="listenN2">0</div><div class="t">разборов сделано · цель на эту неделю: <span id="listengoal">—</span></div></div></div>
-        <button class="btn" id="listenadd">+1 разбор</button>
+        <div class="row"><button class="btn ghost" id="listensub" aria-label="Убрать один разбор">−1</button><button class="btn" id="listenadd">+1 разбор</button></div>
       </div>
     </div>
   </div>
@@ -462,7 +473,7 @@ const WEEKS = [
  {s:[2026,9,12],n:2,t:"Настоящее время",g:"Präsens -en / -s / -t; вопросительные слова Wien, Wat, Wou, Wéini, Wéi, Firwat",topic:"famill",
   l:"10 минут RTL + один раз в неделю прогноз погоды: ловить только числа.",
   tasks:["20 самых частых глаголов в настоящем времени (goen, kommen, maachen, schaffen, wunnen, schwätzen, iessen, drénken…)","Тема «Famill»: 6 фраз + 3 вопроса экзаменатора","Карточки «Дом» и «Еда»","Диктофон: 45 секунд о семье"]},
- {s:[2026,9,19],n:3,t:"Числа, время, артикли",g:"Zuelen 1–100, Auer, Deeg; артикли den / d' / dat",topic:"alldag",
+ {s:[2026,9,19],n:3,t:"Числа, время, артикли",g:"Zuelen 1–100, Auer, Deeg; артикли den / d' / en / eng",topic:"alldag",
   l:"Прогноз погоды и объявления: записать все услышанные числа и время.",
   tasks:["Числа до 100 и время вслух на скорость — 3 минуты в день","Тема «Alldag»: распорядок дня от подъёма до сна","Карточки «Погода и время», «Транспорт»","Eifeler Regel: прочитать правило, начать слышать выпадение -n"]},
  {s:[2026,9,26],n:4,t:"Модальные глаголы и порядок слов",g:"kann, muss, wëll, soll, däerf + инфинитив в конце; глагол на втором месте",topic:"wunnen",
@@ -633,16 +644,89 @@ const VOCAB = [
   {t:"Числа и дни", w:[["eent, zwee, dräi, véier, fënnef","1–5"],["sechs, siwen, aacht, néng, zéng","6–10"],["eelef, zwielef, drëtzéng, véierzéng, fofzéng","11–15"],["zwanzeg, drësseg, véierzeg, fofzeg","20, 30, 40, 50"],["honnert","100"],["um sechs Auer","в шесть часов"],["hallwer siwen","полседьмого"],["Véierel op aacht","четверть девятого"],["Méindeg, Dënschdeg, Mëttwoch","пн, вт, ср"],["Donneschdeg, Freideg","чт, пт"],["Samschdeg, Sonndeg","сб, вс"],["de Weekend","выходные"]]}
 ];
 
-const GRAMMAR = [
-  ["sinn / hunn","ech sinn, du bass, hien ass, mir sinn, dir sidd, si sinn · ech hunn, du hues, hien huet, mir hunn, dir hutt, si hunn"],
-  ["Präsens","-en / -s / -t: ech maachen, du méchs, hie mécht, mir maachen, dir maacht, si maachen"],
-  ["Perfekt","hunn / sinn + Partizip: Ech hu geschafft. Ech si gefuer. Ech hu gemaach. Движение и изменение состояния — с sinn"],
-  ["Modalverben","kann, muss, wëll, soll, däerf + инфинитив в конце: Ech muss muer fréi opstoen."],
-  ["Wuertstellung","Глагол на втором месте. В придаточном — в конце: …, well ech midd sinn."],
-  ["Eifeler Regel","Конечное -n отпадает, если следующее слово начинается не на n, d, t, z, h или гласную: ech ginn an d'Stad, но ech gi schaffen"],
-  ["Artikelen","den / d' / dat, множественное d'. Датив: mat der Famill, an engem Appartement"],
-  ["Verglach","méi grouss wéi, sou grouss wéi, am gréissten; gutt – besser – am beschten"],
-  ["Pronomen (Dativ)","mir, dir, him, hir, eis, iech, hinnen: Dat gefält mir."]
+/* grammar sections: wk — plan weeks, t — tables {h:header row, r:rows}, ex — examples (starrable), trap — typical mistake */
+const GRAMS = [
+ {k:"sinn", lb:"sinn an hunn", ru:"«быть» и «иметь»", wk:[1],
+  why:"Два глагола, на которых держится половина ответов: возраст, профессия, семья, самочувствие. С ними же строится прошедшее время.",
+  rules:["hien — «он», hatt — «она» для девочек и женщин, которых называют по имени (d'Meedchen — среднего рода), si — «она» и «они».","Dir с большой буквы — вежливое «Вы». К экзаменатору — только так: Wéi geet et Iech?","Возраст, профессия, состояние — через sinn. Голод, жажда, время, дети — через hunn."],
+  t:[{h:["","sinn — быть","hunn — иметь","goen — идти"],r:[["ech","sinn","hunn","ginn"],["du","bass","hues","gees"],["hien / hatt","ass","huet","geet"],["mir","sinn","hunn","ginn"],["dir / Dir","sidd","hutt","gitt"],["si","sinn","hunn","ginn"]]}],
+  ex:[["Ech sinn … Joer al.","Мне … лет."],["Ech si midd.","Я устал."],["Ech hunn zwee Kanner.","У меня двое детей."],["Ech hunn Honger an Duuscht.","Я голоден и хочу пить."],["Hatt ass zéng Joer al.","Ей десять лет."],["Mir ginn an d'Stad.","Мы идём в город."],["Hutt Dir Zäit?","У Вас есть время?"]],
+  trap:"Возраст — с sinn: Ech sinn 40 Joer al. «Ech hunn 40 Joer» — калька с французского, так не говорят."},
+ {k:"praesens", lb:"Präsens", ru:"Настоящее время", wk:[2],
+  why:"В нём ты описываешь обычный день, работу и жильё — это большая часть беседы. В нём же говорят и о будущем: Muer schaffen ech.",
+  rules:["Окончания: ech -en, du -s, hien -t, mir -en, dir -t, si -en. Формы mir и si совпадают с инфинитивом.","У части частых глаголов в формах du и hien меняется гласная — их проще запомнить готовыми, см. вторую таблицу."],
+  t:[{h:["","wunnen — жить","schaffen — работать","maachen — делать"],r:[["ech","wunnen","schaffen","maachen"],["du","wunns","schaffs","méchs"],["hien / hatt","wunnt","schafft","mécht"],["mir","wunnen","schaffen","maachen"],["dir / Dir","wunnt","schafft","maacht"],["si","wunnen","schaffen","maachen"]]},
+     {h:["Глагол","du","hien / hatt"],r:[["fueren — ехать","fiers","fiert"],["kommen — приходить","kënns","kënnt"],["iessen — есть","ëss","ësst"],["huelen — брать","hëls","hëlt"],["schlofen — спать","schléifs","schléift"]]}],
+  ex:[["Ech wunnen zu …","Я живу в …"],["Wou schafft Dir?","Где Вы работаете?"],["Hie fiert all Dag mam Bus.","Он каждый день ездит на автобусе."],["Mir iessen owes zesummen.","Вечером мы едим вместе."],["Muer schaffen ech net.","Завтра я не работаю."]],
+  trap:"dir (вы — несколько человек) и Dir (Вы — вежливо) звучат одинаково и спрягаются одинаково: Dir wunnt. С экзаменатором — всегда Dir."},
+ {k:"froen", lb:"Froen", ru:"Вопросы", wk:[2],
+  why:"Экзаменатор оценивает «диалог»: встречный вопрос — прямые баллы. А мгновенно узнать вопросительное слово — половина понимания на слух.",
+  rules:["Вопрос со словом: сначала вопросительное слово, потом глагол — Wou wunnt Dir?","Вопрос «да / нет»: глагол на первом месте — Wunnt Dir zu Lëtzebuerg? Ответ: Jo / Nee.","Самый короткий встречный вопрос: An Dir? — «А Вы?»"],
+  t:[{h:["Слово","Значение","Пример"],r:[["Wien","кто","Wien ass dat?"],["Wat","что","Wat maacht Dir gär?"],["Wou","где","Wou wunnt Dir?"],["Wouhin","куда","Wouhin fuert Dir an d'Vakanz?"],["Wouhier","откуда","Wouhier kommt Dir?"],["Wéini","когда","Wéini schafft Dir?"],["Wéi","как","Wéi geet et Iech?"],["Firwat","почему","Firwat léiert Dir Lëtzebuergesch?"],["Wéi vill","сколько","Wéi vill Kanner hutt Dir?"],["Wéi laang","как долго","Wéi laang wunnt Dir scho hei?"],["Wéi eng","какой","Wéi eng Sprooche schwätzt Dir?"]]}],
+  ex:[["Kënnt Dir dat widderhuelen?","Можете повторить?"],["Wéi laang wunnt Dir scho hei?","Как долго Вы уже здесь живёте?"],["Schafft Dir och hei?","Вы тоже здесь работаете?"],["Firwat net?","Почему нет?"],["An Dir?","А Вы?"]],
+  trap:"Wou — «где», а «куда» — Wouhin. Firwat — «почему», Wéi — «как»."},
+ {k:"artikel", lb:"Artikelen", ru:"Артикли", wk:[3],
+  why:"Артикль звучит почти в каждой фразе. Ошибка в нём редко мешает пониманию, но правильный датив (mat der Famill) сразу звучит на уровень выше.",
+  rules:["d' пишется слитно со словом: d'Mamm, d'Kand, d'Kanner.","den и en теряют -n по правилу Eifel: de Mann, e Kaffi — но den Hond, en Auto.","Ударное «этот / тот»: deen (м.), déi (ж. и мн.), dat (ср.) — Dat ass gutt."],
+  t:[{h:["","мужской","женский","средний","мн. число"],r:[["определённый","den / de","d'","d'","d'"],["неопределённый","en / e","eng","en / e","—"],["датив, определённый","dem","der","dem","den"],["датив, неопределённый","engem","enger","engem","—"],["«нет, никакой»","keen","keng","keen","keng"]]}],
+  ex:[["de Papp, d'Mamm, d'Kand","папа, мама, ребёнок"],["Ech hunn en Hond an eng Kaz.","У меня собака и кошка."],["Mir hu keen Auto.","У нас нет машины."],["Ech fueren mat der Famill an d'Vakanz.","Я еду в отпуск с семьёй."],["Dat ass mäi Brudder.","Это мой брат."]],
+  trap:"Род не всегда совпадает с русским: d'Meedchen («девочка») — среднего рода, поэтому про неё говорят hatt. Новое слово учи сразу с артиклем из LOD.lu."},
+ {k:"eifel", lb:"Eifeler Regel", ru:"Выпадение конечного -n", wk:[3],
+  why:"Самая люксембургская черта произношения. Баллов за неё почти не снимают, но когда ты её слышишь, понимать речь на слух заметно легче.",
+  rules:["Конечное -n (и -nn) выпадает, если следующее слово начинается не с гласной и не с n, d, t, z, h.","Перед паузой и в конце фразы -n остаётся: Mir sinn.","Правило действует и на письме — так пишут сами люксембуржцы."],
+  t:[{h:["-n остаётся","-n выпадает"],r:[["den Hond","de Papp"],["en Apel","e Kaffi"],["Mir sinn doheem","Mir si midd"],["Ech ginn an d'Stad","Ech gi schaffen"],["Si hunn Zäit","Si hu Kanner"]]}],
+  ex:[["Ech hu keng Zäit.","У меня нет времени."],["Mir sinn net doheem.","Нас нет дома."],["Ech gi muer an de Supermarché.","Завтра я пойду в супермаркет."],["Wat maache mir haut?","Что мы делаем сегодня?"]],
+  trap:"Не выбрасывай -n перед гласной: «ech gi an d'Stad» — ошибка, правильно ech ginn an d'Stad."},
+ {k:"wuert", lb:"Wuertstellung", ru:"Порядок слов и отрицание", wk:[4],
+  why:"Главное правило фразы: глагол на втором месте. Начни с Haut, Am Weekend или Dofir — и подлежащее встанет после глагола. Звучит естественно и даёт баллы за связность.",
+  rules:["net ставится после глагола и после дополнения: Ech schaffen net. Ech schaffen haut net.","С существительным без артикля вместо net — keen / keng: Ech hu keng Kanner.","gär («охотно, люблю») стоит там же, где net: Ech iesse gär Fësch. Ech iesse net gär Fësch."],
+  t:[{h:["1-е место","2-е место: глагол","дальше"],r:[["Ech","fueren","haut mam Zuch."],["Haut","fueren","ech mam Zuch."],["Am Weekend","ginn","mir spadséieren."],["Dofir","léieren","ech Lëtzebuergesch."]]}],
+  ex:[["Haut ass et kal.","Сегодня холодно."],["Um Weekend schlofen ech méi laang.","По выходным я сплю дольше."],["Ech fëmme net.","Я не курю."],["Ech drénke gär Téi, mee net gär Kaffi.","Я люблю чай, но не люблю кофе."],["Muer hunn ech keng Zäit.","Завтра у меня нет времени."]],
+  trap:"После слова в начале фразы глагол идёт сразу: не «Haut ech fueren», а Haut fueren ech."},
+ {k:"modal", lb:"Modalverben", ru:"Модальные глаголы", wk:[4],
+  why:"Так проще всего говорить о планах, желаниях и обязанностях: «хочу», «надо», «могу». Второй глагол просто уходит в конец в начальной форме.",
+  rules:["Модальный глагол на втором месте, инфинитив — в самом конце: Ech muss muer fréi opstoen.","sollen («следует») спрягается как wëllen: ech soll, du solls, hie soll.","Вежливая просьба — hätt gär: Ech hätt gär e Kaffi. Мечта или пожелание — géif gär: Ech géif gär méi reesen."],
+  t:[{h:["","kënnen — мочь","mussen — должен","wëllen — хотеть","däerfen — можно"],r:[["ech","kann","muss","wëll","däerf"],["du","kanns","muss","wëlls","däerfs"],["hien / hatt","kann","muss","wëll","däerf"],["mir","kënnen","mussen","wëllen","däerfen"],["dir / Dir","kënnt","musst","wëllt","däerft"],["si","kënnen","mussen","wëllen","däerfen"]]}],
+  ex:[["Ech kann e bësse Lëtzebuergesch schwätzen.","Я немного говорю по-люксембургски."],["Ech muss all Dag fréi opstoen.","Мне каждый день надо рано вставать."],["Mir wëllen dëst Joer un d'Mier fueren.","В этом году мы хотим поехать на море."],["Hei däerf een net fëmmen.","Здесь нельзя курить."],["Ech hätt gär e Glas Waasser, wann ech gelift.","Мне стакан воды, пожалуйста."]],
+  trap:"Инфинитив не стоит рядом с модальным глаголом: не «Ech wëll fueren muer», а Ech wëll muer fueren."},
+ {k:"perfekt", lb:"Perfekt", ru:"Прошедшее время", wk:[5,6,11,13],
+  why:"«Что вы делали в выходные, в отпуске, вчера?» — такой вопрос есть почти в каждой теме. В разговорном люксембургском прошлое — это Perfekt: hunn или sinn плюс причастие в конце.",
+  rules:["Большинство глаголов — с hunn: Ech hunn gëschter geschafft.","С sinn — движение и смена состояния: goen, fueren, kommen, bleiwen, opstoen. Mir si gefuer.","Причастие стоит в самом конце: Ech hunn de Weekend vill gelies.","Без ge-: глаголы на -éieren и с приставками be-, ver-, er-: telefonéiert, bezuelt, erzielt.","Для sinn и hunn чаще говорят простое прошедшее: Ech war midd. Ech hat keng Zäit."],
+  t:[{h:["Инфинитив","Причастие","С чем"],r:[["maachen","gemaach","hunn"],["schaffen","geschafft","hunn"],["kafen","kaaft","hunn"],["kucken","gekuckt","hunn"],["iessen","giess","hunn"],["drénken","gedronk","hunn"],["liesen","gelies","hunn"],["schreiwen","geschriwwen","hunn"],["gesinn","gesinn","hunn"],["telefonéieren","telefonéiert","hunn"],["goen","gaangen","sinn"],["fueren","gefuer","sinn"],["kommen","komm","sinn"],["bleiwen","bliwwen","sinn"],["opstoen","opgestan","sinn"]]},
+     {h:["","sinn → был","hunn → имел"],r:[["ech","war","hat"],["du","waars","has"],["hien / hatt","war","hat"],["mir","waren","haten"],["dir / Dir","waart","hat"],["si","waren","haten"]]}],
+  ex:[["Wat hutt Dir de Weekend gemaach?","Что Вы делали в выходные?"],["Ech hunn e Buch gelies an e Film gekuckt.","Я читал книгу и смотрел фильм."],["Mir si spadséiere gaangen.","Мы ходили гулять."],["Lescht Joer si mir an d'Vakanz gefuer.","В прошлом году мы ездили в отпуск."],["Ech war gëschter krank.","Вчера я болел."],["Ech hat keng Zäit.","У меня не было времени."]],
+  trap:"Движение — с sinn: не «Ech hunn gefuer», а Ech si gefuer."},
+ {k:"nebensaz", lb:"Nebensätz", ru:"Придаточные: well, datt, wann", wk:[7],
+  why:"Одно «well …» после ответа превращает короткую фразу в объяснение — это и связность, и грамматика. Правило одно: спрягаемый глагол уходит в конец.",
+  rules:["Глагол — в конце придаточного: …, well ech hei wunnen.","С Perfekt или модальным глаголом в конец уходит вспомогательный: …, well ech gëschter vill geschafft hunn.","Если придаточное стоит первым, главное предложение начинается с глагола: Wann et reent, bleiwen ech doheem."],
+  t:[{h:["Союз","Значение","Пример"],r:[["well","потому что","Ech bleiwen doheem, well ech midd sinn."],["datt","что","Ech mengen, datt et muer reent."],["wann","когда, если","Wann et reent, liesen ech."],["ob","ли","Ech weess net, ob hie kënnt."],["wéi","когда (в прошлом)","Wéi ech kleng war, hunn ech vill gespillt."],["wou","где, в котором","D'Stad, wou ech wunnen, ass roueg."]]}],
+  ex:[["Ech léiere Lëtzebuergesch, well ech hei liewen.","Я учу люксембургский, потому что живу здесь."],["Ech fannen, datt Lëtzebuerg ganz sécher ass.","Я считаю, что Люксембург очень безопасный."],["Wann ech Zäit hunn, ginn ech lafen.","Когда у меня есть время, я бегаю."],["Ech weess net, ob dat richteg ass.","Не знаю, правильно ли это."]],
+  trap:"После well глагол не на втором месте: не «well ech sinn midd», а well ech midd sinn. Не успеваешь перестроить — скажи две фразы через dofir: Ech si midd, dofir bleiwen ech doheem."},
+ {k:"dativ", lb:"Präpositiounen", ru:"Предлоги и датив", wk:[8,9],
+  why:"Где живёшь, с кем, на чём ездишь, где работаешь — всё это предлоги. Слитные mam, am, um звучат очень по-люксембургски.",
+  rules:["После mat, bei, vun, zu, aus, no — датив: dem / der / dem / den.","an и op: где? — датив (Ech sinn an der Stad), куда? — винительный (Ech ginn an d'Stad).","Города без артикля: zu Lëtzebuerg — где, op Lëtzebuerg — куда."],
+  t:[{h:["Предлог","Значение","Пример"],r:[["mat","с; на (транспорт)","mat der Famill, mam Zuch"],["bei","у","bei mengen Elteren, beim Dokter"],["vun","от, из","vun der Stad, vum Büro"],["zu","в (городе)","zu Lëtzebuerg, zu Esch"],["an","в","an engem Appartement, an der Kichen"],["op","на","op der Aarbecht, um Balkon"],["no","после; в (куда)","no der Aarbecht, no Paräis"],["aus","из","Ech kommen aus …"]]},
+     {h:["Полная форма","Слитно"],r:[["mat dem","mam"],["an dem","am"],["op dem","um"],["vun dem","vum"],["bei dem","beim"]]}],
+  ex:[["Ech fueren all Dag mam Bus op d'Aarbecht.","Я каждый день езжу на работу на автобусе."],["Mir wunnen an engem Haus mat engem Gaart.","Мы живём в доме с садом."],["Ech schaffen zu Lëtzebuerg.","Я работаю в Люксембурге."],["No der Aarbecht ginn ech an de Fitness.","После работы я иду в спортзал."],["D'Kanner sinn am Gaart.","Дети в саду."]],
+  trap:"Где? и куда? различаются артиклем: Ech sinn an der Stad, но Ech ginn an d'Stad. Перепутать не страшно, но верный вариант слышно."},
+ {k:"pronomen", lb:"Pronomen", ru:"Местоимения", wk:[15],
+  why:"«Мне нравится», «позвоню тебе», «как у Вас дела» — без этих форм не обойтись. Хватит трёх столбцов.",
+  rules:["gefalen («нравиться») и hëllefen («помогать») требуют формы «кому»: Dat gefält mir. Kann ech Iech hëllefen?","«Как дела?» — Wéi geet et dir? (тебе), Wéi geet et Iech? (Вам).","В быстрой речи слышны короткие формы: hien → en, hatt → et, si → se, mir → mer, dir → der."],
+  t:[{h:["Кто","Кого","Кому"],r:[["ech","mech","mir"],["du","dech","dir"],["hien","hien","him"],["hatt","hatt","him"],["si (она)","si","hir"],["mir","eis","eis"],["dir","iech","iech"],["Dir","Iech","Iech"],["si (они)","si","hinnen"]]}],
+  ex:[["Dat gefält mir gutt.","Мне это очень нравится."],["Ech ruffen dech muer un.","Я позвоню тебе завтра."],["Ech hunn him e Buch ginn.","Я подарил ему книгу."],["Meng Noperen hëllefen eis heiansdo.","Соседи иногда нам помогают."],["Wéi geet et Iech?","Как у Вас дела?"]],
+  trap:"«Мне нравится» — Dat gefält mir, не «mech»."},
+ {k:"verglach", lb:"Verglach a gär", ru:"Сравнение и «люблю / предпочитаю»", wk:[14],
+  why:"Темы «жизнь в Люксембурге» и «чем отличается ваша страна» сами просят сравнения. А gär — léiwer — am léifsten — самый простой способ рассказать о вкусах.",
+  rules:["В разговоре сравнивают почти всегда через méi: méi grouss, méi deier, méi einfach.","«Чем» — wéi: Lëtzebuerg ass méi kleng wéi d'Belsch. «Так же, как» — sou … wéi.","Со gär порядок как с net: Ech drénke gär Téi, léiwer Kaffi, am léifste Waasser."],
+  t:[{h:["Основа","Больше","Больше всего"],r:[["grouss","méi grouss","am gréissten"],["kleng","méi kleng","am klengsten"],["deier","méi deier","am deiersten"],["gutt","besser","am beschten"],["vill","méi","am meeschten"],["gär","léiwer","am léifsten"]]}],
+  ex:[["Den Zuch ass méi séier wéi de Bus.","Поезд быстрее автобуса."],["D'Loyere sinn hei méi héich wéi an anere Länner.","Аренда здесь выше, чем в других странах."],["Ech hu léiwer de Summer wéi de Wanter.","Лето мне нравится больше зимы."],["Am léifsten iessen ech Fësch.","Больше всего я люблю рыбу."],["Lëtzebuergesch ass méi schwéier wéi Englesch.","Люксембургский сложнее английского."]],
+  trap:"«Больше, чем» — wéi, а не als, как в немецком: méi grouss wéi."},
+ {k:"zukunft", lb:"Zukunft an Zäit", ru:"Будущее и время", wk:[12,14],
+  why:"Вопрос «какие у вас планы?» почти гарантирован. Отдельное будущее время учить не нужно: хватает настоящего и слова, которое показывает время.",
+  rules:["Будущее = настоящее время + слово-маркер: Muer schaffen ech. Nächst Woch fuere mir op Paräis.","Планы и намерения — через wëllen, прогноз — через wäerten: Ech wëll e Cours maachen. Et wäert muer reenen.","Время: um aacht Auer — в восемь, hallwer néng — 8:30 (как в немецком: «половина девятого»)."],
+  t:[{h:["Слово","Значение"],r:[["haut","сегодня"],["muer","завтра"],["iwwermuer","послезавтра"],["dës Woch","на этой неделе"],["nächst Woch","на следующей неделе"],["nächst Joer","в следующем году"],["am Summer","летом"],["geschwënn","скоро"]]}],
+  ex:[["Muer ginn ech bei den Dokter.","Завтра я пойду к врачу."],["Nächst Joer wëlle mir eng Rees maachen.","В следующем году мы хотим поехать в путешествие."],["Ech wäert de Sproochentest am Februar maachen.","Я буду сдавать Sproochentest в феврале."],["De Cours fänkt um hallwer siwen un.","Курс начинается в половине седьмого."]],
+  trap:"hallwer siwen — это 6:30, а не 7:30."}
 ];
 
 const QUIZ = [
@@ -687,14 +771,14 @@ const RESOURCES = [
 /* ============ STATE ============ */
 const KEY="sproochentest.feb2027.v1";
 /* done/known/days are sets; ts["done:"+key] is the time of the last change, so an unchecked item stays unchecked after a merge.
-   listenBy counts per device so increments on two devices add up. */
-let state={done:{},known:{},days:{},ts:{},listenBy:{},quizBest:0,sims:[]};
+   listenBy / listenDec count +1 and −1 per device; both only grow, so changes from several devices add up. */
+let state={done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:0,sims:[]};
 const SETS=["done","known","days"];
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}
 const DEVICE=lsGet(KEY+".device")||(()=>{const id=Math.random().toString(36).slice(2,10);lsSet(KEY+".device",id);return id;})();
 function normalize(s){
-  s=Object.assign({done:{},known:{},days:{},ts:{},listenBy:{},quizBest:0,sims:[]},s||{});
+  s=Object.assign({done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:0,sims:[]},s||{});
   if(s.listen&&!Object.keys(s.listenBy).length)s.listenBy={[DEVICE]:s.listen};
   delete s.listen;
   s.sims=(s.sims||[]).map(x=>x.id?x:Object.assign({id:x.d+"-"+x.t+"-"+x.ok},x));
@@ -703,9 +787,10 @@ function normalize(s){
 function localLoad(){try{const r=lsGet(KEY);if(r)state=normalize(JSON.parse(r));}catch(e){}}
 function localSave(){lsSet(KEY,JSON.stringify(state));}
 function setFlag(f,k,on){if(on)state[f][k]=1;else delete state[f][k];state.ts[f+":"+k]=Date.now();}
-function listenTotal(){return Object.values(state.listenBy).reduce((a,b)=>a+b,0);}
+const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
+function listenTotal(){return Math.max(0,sum(state.listenBy)-sum(state.listenDec));}
 function mergeState(a,b){
-  const o={done:{},known:{},days:{},ts:{},listenBy:{},quizBest:Math.max(a.quizBest||0,b.quizBest||0),sims:[]};
+  const o={done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:Math.max(a.quizBest||0,b.quizBest||0),sims:[]};
   SETS.forEach(f=>{
     const ids=new Set();
     [a,b].forEach(s=>{Object.keys(s[f]).forEach(k=>ids.add(k));Object.keys(s.ts).forEach(id=>{if(id.startsWith(f+":"))ids.add(id.slice(f.length+1));});});
@@ -716,7 +801,7 @@ function mergeState(a,b){
       if(ta||tb)o.ts[id]=Math.max(ta,tb);
     });
   });
-  [a,b].forEach(s=>Object.entries(s.listenBy).forEach(([d,n])=>{o.listenBy[d]=Math.max(o.listenBy[d]||0,n);}));
+  ["listenBy","listenDec"].forEach(f=>[a,b].forEach(s=>Object.entries(s[f]).forEach(([d,n])=>{o[f][d]=Math.max(o[f][d]||0,n);})));
   const sims=new Map();[...a.sims,...b.sims].forEach(x=>sims.set(x.id,x));
   o.sims=[...sims.values()].sort((x,y)=>x.id<y.id?-1:1).slice(-60);
   return o;
@@ -777,7 +862,7 @@ function paintStrip(){
 }
 
 /* ============ TABS ============ */
-const TABS=[["today","Сегодня"],["plan","План"],["topics","Темы"],["photo","Фото"],["train","Тренажёр"],["listen","Аудирование"],["res","Ресурсы"]];
+const TABS=[["today","Сегодня"],["plan","План"],["topics","Темы"],["photo","Фото"],["gram","Грамматика"],["train","Тренажёр"],["listen","Аудирование"],["res","Ресурсы"]];
 function buildTabs(){
   const nav=$("#tabs");
   TABS.forEach(([id,l],i)=>{const b=document.createElement("button");b.type="button";b.id="tab-"+id;b.textContent=l;b.setAttribute("role","tab");b.setAttribute("aria-selected",String(i===0));b.addEventListener("click",()=>select(id));nav.appendChild(b);});
@@ -805,10 +890,12 @@ function focusBlock(w){
   const ph=phaseOf(w.n);
   const t=w.topic==="all"?null:topicByKey(w.topic);
   const f=document.createElement("div");f.className="focus";
-  f.innerHTML='<div><b>Грамматика</b>'+esc(w.g)+'</div>'
+  const gs=GRAMS.find(g=>g.wk.includes(w.n));
+  f.innerHTML='<div><b>Грамматика</b>'+esc(w.g)+(gs?' <button class="link" data-g="'+gs.k+'">разобрать →</button>':'')+'</div>'
    +'<div><b>Тема недели</b>'+(t?'<button class="link" data-t="'+t.k+'">'+esc(t.lb)+'</button> <span class="muted">'+esc(t.ru)+'</span>':'Все 18 тем — симуляции')+'</div>'
    +'<div><b>Аудирование</b>'+esc(w.l)+'</div>';
-  f.querySelectorAll("button.link").forEach(b=>b.addEventListener("click",()=>{select("topics");showTopic(b.dataset.t);}));
+  f.querySelectorAll("button[data-t]").forEach(b=>b.addEventListener("click",()=>{select("topics");showTopic(b.dataset.t);}));
+  f.querySelectorAll("button[data-g]").forEach(b=>b.addEventListener("click",()=>{select("gram");showGram(b.dataset.g);}));
   return f;
 }
 function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML;}
@@ -861,7 +948,7 @@ function buildPlan(){
   });
   $("#openall").addEventListener("click",e=>{const all=[...document.querySelectorAll("details.week")];const open=all.some(x=>!x.open);all.forEach(x=>x.open=open);e.currentTarget.textContent=open?"Свернуть все недели":"Развернуть все недели";});
   $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;Object.keys(state.done).forEach(k=>setFlag("done",k,false));persist();syncChecks();buildToday();});
-  const gt=$("#gramtbl");gt.innerHTML=GRAMMAR.map(g=>"<tr><th>"+esc(g[0])+"</th><td>"+esc(g[1])+"</td></tr>").join("");
+  $("#togram").addEventListener("click",()=>select("gram"));
 }
 
 /* ============ TOPICS ============ */
@@ -900,6 +987,36 @@ function showTopic(k){
   bindStars(c);
 }
 
+/* ============ GRAMMAR ============ */
+let curGram=(GRAMS.find(g=>g.wk.includes(CUR))||GRAMS[0]).k;
+function buildGram(){
+  const ch=$("#gramchips");
+  GRAMS.forEach(g=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=g.lb;b.dataset.k=g.k;b.addEventListener("click",()=>showGram(g.k));ch.appendChild(b);});
+  showGram(curGram);
+}
+function gramTable(t){
+  return '<div class="tbl gram-t"><table><tr>'+t.h.map(c=>'<th>'+esc(c)+'</th>').join("")+'</tr>'
+    +t.r.map(r=>'<tr>'+r.map((c,i)=>i===0?'<th>'+esc(c)+'</th>':'<td>'+esc(c)+'</td>').join("")+'</tr>').join("")+'</table></div>';
+}
+function showGram(k){
+  curGram=k;const i=GRAMS.findIndex(g=>g.k===k),g=GRAMS[i];
+  document.querySelectorAll("#gramchips .chip").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===k)));
+  const c=$("#gramcard");
+  c.innerHTML='<div class="row" style="justify-content:space-between"><h2>'+esc(g.lb)+' <span class="muted" style="font-weight:500;font-size:18px">'+esc(g.ru)+'</span></h2><span class="pill">неделя '+g.wk.join(", ")+'</span></div>'
+   +'<p class="lead" style="margin-top:10px">'+esc(g.why)+'</p>'
+   +'<ul class="gram-rules">'+g.rules.map(r=>'<li>'+esc(r)+'</li>').join("")+'</ul>'
+   +g.t.map(gramTable).join("")
+   +'<h3 style="margin-top:18px">Примеры</h3><div>'+rows(g.ex,true,"g-"+k)+'</div>'
+   +'<div class="note"><b>Типичная ошибка.</b> '+esc(g.trap)+'</div>'
+   +'<div class="row" style="justify-content:space-between;margin-top:6px"><div class="row">'
+   +(i>0?'<button class="btn ghost" data-go="'+GRAMS[i-1].k+'">← '+esc(GRAMS[i-1].lb)+'</button>':'')
+   +(i<GRAMS.length-1?'<button class="btn ghost" data-go="'+GRAMS[i+1].k+'">'+esc(GRAMS[i+1].lb)+' →</button>':'')
+   +'</div><button class="btn" id="gramquiz">Проверить себя в квизе</button></div>';
+  bindStars(c);
+  c.querySelectorAll("button[data-go]").forEach(b=>b.addEventListener("click",()=>{showGram(b.dataset.go);c.scrollIntoView({behavior:"smooth",block:"start"});}));
+  $("#gramquiz").addEventListener("click",()=>{select("train");$("#trainchips").children[2].click();});
+}
+
 /* ============ PHOTO ============ */
 function buildPhoto(){
   $("#photosteps").innerHTML=PHOTO_STEPS.map(s=>'<li><div><b>'+esc(s[0])+'</b><span class="lb">'+esc(s[1])+'</span><br><span class="ru">'+esc(s[2])+'</span></div></li>').join("");
@@ -932,6 +1049,7 @@ const ALL=[];
 TOPICS.forEach(t=>t.p.forEach((p,i)=>ALL.push({g:"Фразы: "+t.lb,lb:p[0],ru:p[1],key:"t-"+t.k+"-"+i})));
 RESCUE.forEach((p,i)=>ALL.push({g:"Фразы-спасатели",lb:p[0],ru:p[1],key:"rescue-"+i}));
 PHOTO_WORDS.forEach((p,i)=>ALL.push({g:"Описание фото",lb:p[0],ru:p[1],key:"photo-"+i}));
+GRAMS.forEach(g=>g.ex.forEach((p,i)=>ALL.push({g:"Грамматика: примеры",lb:p[0],ru:p[1],key:"g-"+g.k+"-"+i})));
 VOCAB.forEach((v,vi)=>v.w.forEach((p,i)=>ALL.push({g:"Слова: "+v.t,lb:p[0],ru:p[1],key:"v-"+vi+"-"+i})));
 const GROUPS=[...new Set(ALL.map(c=>c.g))];
 let active=new Set(),deck=[],idx=0,flipped=false,reverse=false;
@@ -1059,6 +1177,7 @@ function listenGoal(){const ph=phaseOf(CUR).id;return {p1:1,p2:3,p3:3,p4:5}[ph];
 function buildListen(){
   $("#listengoal").textContent=listenGoal()+" в неделю";
   $("#listenadd").addEventListener("click",()=>{state.listenBy[DEVICE]=(state.listenBy[DEVICE]||0)+1;persist();});
+  $("#listensub").addEventListener("click",()=>{if(!listenTotal())return;state.listenDec[DEVICE]=(state.listenDec[DEVICE]||0)+1;persist();});
 }
 
 /* ============ RESOURCES ============ */
@@ -1079,13 +1198,13 @@ function refreshStats(){
   $("#pct").textContent=pct+"%";
   const C=2*Math.PI*26;const fg=$("#ringfg");fg.style.strokeDasharray=C;fg.style.strokeDashoffset=C*(1-pct/100);
   $("#knownN").textContent=Object.keys(state.known).length;
-  $("#listenN").textContent=listenTotal();$("#listenN2").textContent=listenTotal();
+  $("#listenN").textContent=listenTotal();$("#listenN2").textContent=listenTotal();$("#listensub").disabled=!listenTotal();
   simLog&&$("#simlog")&&simLog();
 }
 
 /* ============ BOOT ============ */
 localLoad();
-buildHero();buildTabs();buildToday();buildPlan();buildTopics();buildPhoto();buildTrain();buildListen();buildRes();
+buildHero();buildTabs();buildToday();buildPlan();buildTopics();buildPhoto();buildGram();buildTrain();buildListen();buildRes();
 paintStrip();refreshStats();
 
 /* ============ SYNC ============ */
@@ -1126,7 +1245,7 @@ function newCode(){
   return [0,1,2].map(i=>CODE_WORDS[r[i]%CODE_WORDS.length]).join("-")+"-"+String(r[3]%10000).padStart(4,"0");
 }
 function refreshAll(){
-  syncChecks();buildToday();refreshStats();render();showTopic(curTopic);
+  syncChecks();buildToday();refreshStats();render();showTopic(curTopic);showGram(curGram);
   $("#rescue").innerHTML=rows(RESCUE,true,"rescue");bindStars($("#rescue"));
   $("#photowords").innerHTML=rows(PHOTO_WORDS,true,"photo");bindStars($("#photowords"));
   $("#quizbest").textContent="лучший: "+(state.quizBest?state.quizBest+" / "+QUIZ.length:"—");

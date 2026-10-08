@@ -50,7 +50,7 @@ router = Dispatcher()
 
 def kb(rows: list[list[tuple[str, str]]]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text=t, callback_data=d) for t, d in row] for row in rows]
+        inline_keyboard=[[InlineKeyboardButton(text=t, callback_data=d) for t, d in row] for row in rows if row]
     )
 
 
@@ -64,6 +64,7 @@ MENU = kb(
         [("🎤 Устная часть", "sim"), ("🖼 Описание фото", "pic")],
         [("❓ Квиз", "quiz"), ("📚 Грамматика", "gram")],
         [("💬 Темы", "topics"), ("🆘 Спасатели", "rescue")],
+        [("📺 Курс RTL", "rtl")],
     ]
 )
 BACK = ("⬅️ Меню", "menu")
@@ -91,7 +92,8 @@ WELCOME = (
     "• <b>Карточки</b>: слова и фразы с транскрипцией\n"
     "• <b>Устная часть</b>: вопрос экзаменатора, ты отвечаешь вслух или голосовым\n"
     "• <b>Описание фото</b>: сцена и шаблон ответа\n"
-    "• <b>Квиз</b>: грамматика с объяснениями\n\n"
+    "• <b>Квиз</b>: грамматика с объяснениями\n"
+    "• <b>Курс RTL</b>: уроки RTL Today по неделям плана\n\n"
     "Выбирай 👇"
 )
 
@@ -142,6 +144,8 @@ def today_kb() -> InlineKeyboardMarkup:
     rows = []
     if cw and cw[1]["topic"] in TOPICS:
         rows.append([("💬 Тема недели", f"topic:{cw[1]['topic']}"), ("🃏 Её фразы", f"cg:t:{cw[1]['topic']}")])
+    if cw and any(x["week"] == cw[0] for x in DATA["rtl"]):
+        rows.append([("📺 Курс RTL этой недели", f"rtlw:{cw[0]}")])
     rows.append([BACK])
     return kb(rows)
 
@@ -406,6 +410,144 @@ async def cb_rescue(c: CallbackQuery) -> None:
     await c.answer()
 
 
+# ---------- RTL Today course ----------
+# Buttons are URL buttons: lessons open on today.rtl.lu, nothing is copied into the bot.
+
+RTL = DATA["rtl"]
+RTL_PAGE = 10
+RTL_SECTIONS = {
+    "lesson": "🗣 Разговорные уроки",
+    "basics": "📐 Language Basics (грамматика)",
+    "exam": "✅ Итоговый тест",
+    "other": "➕ Полезные материалы",
+}
+RTL_KIND_ORDER = {"lesson": 0, "basics": 1, "exam": 2, "other": 3}
+RTL_HOME = "https://today.rtl.lu/luxembourg-insider/language"
+
+
+def rtl_label(x: dict, with_week: bool = False) -> str:
+    prefix = {"lesson": f"У{x['n']}", "basics": f"Г{x['n']}", "exam": "Тест", "other": "📎"}[x["kind"]]
+    tail = " 🎧" if x["audio"] else ""
+    week = f" · нед. {x['week']}" if with_week and x["week"] is not None else ""
+    return f"{prefix} · {x['ru']}{tail}{week}"
+
+
+def rtl_url_rows(items: list[dict], with_week: bool = False) -> list[list[InlineKeyboardButton]]:
+    return [[InlineKeyboardButton(text=rtl_label(x, with_week), url=x["url"])] for x in items]
+
+
+def rtl_of_week(n: int) -> list[dict]:
+    return sorted((x for x in RTL if x["week"] == n), key=lambda x: RTL_KIND_ORDER[x["kind"]])
+
+
+RTL_WEEKS = sorted({x["week"] for x in RTL if x["week"] is not None})
+
+
+def rtl_root() -> tuple[str, InlineKeyboardMarkup]:
+    cw = current_week()
+    counts = {k: sum(1 for x in RTL if x["kind"] == k) for k in RTL_SECTIONS}
+    text = (
+        "📺 <b>Курс RTL Today «Learn Luxembourgish»</b>\n\n"
+        f"{counts['lesson']} разговорных уроков с аудио, {counts['basics']} уроков грамматики, "
+        f"итоговый тест и {counts['other']} полезных материалов. Курс на английском.\n\n"
+        "По плану: одна сессия 30–40 минут в выходные, урок недели и его грамматика. "
+        "Кнопки открывают страницы на сайте RTL Today. 🎧 — есть аудио."
+    )
+    rows = []
+    if cw:
+        rows.append([("⭐ Уроки этой недели", f"rtlw:{cw[0]}")])
+    rows += [
+        [("📅 По неделям плана", "rtlws")],
+        [(RTL_SECTIONS["lesson"], "rtls:lesson:0"), (RTL_SECTIONS["basics"].split(" (")[0], "rtls:basics:0")],
+        [(RTL_SECTIONS["exam"], "rtls:exam:0"), (RTL_SECTIONS["other"], "rtls:other:0")],
+    ]
+    markup = kb(rows)
+    markup.inline_keyboard.append([InlineKeyboardButton(text="🌐 Раздел на RTL Today", url=RTL_HOME)])
+    markup.inline_keyboard.append([InlineKeyboardButton(text=BACK[0], callback_data=BACK[1])])
+    return text, markup
+
+
+@router.message(Command("rtl"))
+async def cmd_rtl(m: Message) -> None:
+    text, markup = rtl_root()
+    await m.answer(text, reply_markup=markup, disable_web_page_preview=True)
+
+
+@router.callback_query(F.data == "rtl")
+async def cb_rtl(c: CallbackQuery) -> None:
+    text, markup = rtl_root()
+    await c.message.answer(text, reply_markup=markup, disable_web_page_preview=True)
+    await c.answer()
+
+
+@router.callback_query(F.data == "rtlhome")
+async def cb_rtl_home(c: CallbackQuery) -> None:
+    text, markup = rtl_root()
+    await c.message.edit_text(text, reply_markup=markup, disable_web_page_preview=True)
+    await c.answer()
+
+
+@router.callback_query(F.data == "rtlws")
+async def cb_rtl_weeks(c: CallbackQuery) -> None:
+    cw = current_week()
+    cur = cw[0] if cw else None
+    items = [(f"{'👉 ' if n == cur else ''}Нед. {n}", f"rtlw:{n}") for n in RTL_WEEKS]
+    await c.message.edit_text(
+        "📅 <b>Курс RTL по неделям плана</b>\n\nВыбери неделю (👉 — текущая):",
+        reply_markup=kb(chunk(items, 4) + [[("⬅️ Курс RTL", "rtlhome")]]),
+    )
+    await c.answer()
+
+
+@router.callback_query(F.data.startswith("rtlw:"))
+async def cb_rtl_week(c: CallbackQuery) -> None:
+    n = int(c.data[5:])
+    w = DATA["weeks"][n]
+    start = date(*w["start"])
+    cw = current_week()
+    now = " (сейчас)" if cw and cw[0] == n else ""
+    text = (
+        f"📅 <b>Неделя {n}: {escape(w['title'])}</b>{now}\n"
+        f"с {start:%d.%m.%Y}\n\n"
+        f"📚 Грамматика недели: {escape(w['grammar'])}\n\n"
+        "Открой материалы курса RTL на эту неделю 👇"
+    )
+    i = RTL_WEEKS.index(n)
+    nav = []
+    if i > 0:
+        nav.append((f"◀️ Нед. {RTL_WEEKS[i - 1]}", f"rtlw:{RTL_WEEKS[i - 1]}"))
+    if i < len(RTL_WEEKS) - 1:
+        nav.append((f"Нед. {RTL_WEEKS[i + 1]} ▶️", f"rtlw:{RTL_WEEKS[i + 1]}"))
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=rtl_url_rows(rtl_of_week(n))
+        + kb([nav, [("📅 Все недели", "rtlws"), ("⬅️ Курс RTL", "rtlhome")]]).inline_keyboard
+    )
+    await c.message.edit_text(text, reply_markup=markup, disable_web_page_preview=True)
+    await c.answer()
+
+
+@router.callback_query(F.data.startswith("rtls:"))
+async def cb_rtl_section(c: CallbackQuery) -> None:
+    _, kind, page = c.data.split(":")
+    page = int(page)
+    items = [x for x in RTL if x["kind"] == kind]
+    pages = (len(items) + RTL_PAGE - 1) // RTL_PAGE
+    shown = items[page * RTL_PAGE : (page + 1) * RTL_PAGE]
+    pager = f" · стр. {page + 1}/{pages}" if pages > 1 else ""
+    text = f"{RTL_SECTIONS[kind]}{pager}\n\nНомер недели плана показан справа. 🎧 — есть аудио."
+    nav = []
+    if page > 0:
+        nav.append(("◀️ Назад", f"rtls:{kind}:{page - 1}"))
+    if page < pages - 1:
+        nav.append(("Дальше ▶️", f"rtls:{kind}:{page + 1}"))
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=rtl_url_rows(shown, with_week=True)
+        + kb([nav, [("⬅️ Курс RTL", "rtlhome")]]).inline_keyboard
+    )
+    await c.message.edit_text(text, reply_markup=markup, disable_web_page_preview=True)
+    await c.answer()
+
+
 @router.message()
 async def fallback(m: Message) -> None:
     await m.answer("Не понял 🙂 Выбери в меню:", reply_markup=MENU)
@@ -423,6 +565,7 @@ COMMANDS = [
     BotCommand(command="grammar", description="Грамматика"),
     BotCommand(command="topics", description="Темы экзамена"),
     BotCommand(command="rescue", description="Фразы-спасатели"),
+    BotCommand(command="rtl", description="Курс RTL Today"),
 ]
 
 

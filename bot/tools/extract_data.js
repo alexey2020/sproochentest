@@ -11,6 +11,13 @@ const names = ["EXAM_DATE","PHASES","WEEKS","TOPICS","QUESTIONS_GENERIC","RESCUE
 let src = html.slice(start, end);
 const ed = html.match(/const EXAMDAY\s*=\s*\[[\s\S]*?\];/);
 if (ed) src += "\n" + ed[0];
+const RTL_NAMES = ["RTL_LESSONS", "RTL_BASICS", "RTL_EXAM", "RTL_OTHER", "RTL_PLAN"];
+for (const n of RTL_NAMES) {
+  const m = html.match(new RegExp("const " + n + "\\s*=\\s*[\\[{][\\s\\S]*?[\\]}];"));
+  if (!m) throw new Error(n + " not found in index.html");
+  src += "\n" + m[0];
+}
+names.push(...RTL_NAMES);
 src += "\nglobalThis.__out = {" + names.filter(n => new RegExp("const " + n + "\\b").test(src)).join(",") + ", tr};";
 const ctx = { Date, console };
 vm.createContext(ctx);
@@ -33,6 +40,12 @@ const out = {
   grammar: d.GRAMS.map(g => ({ key: g.k, lb: g.lb, ru: g.ru, why: g.why, rules: g.rules, examples: (g.ex || []).map(pair) })),
   quiz: d.QUIZ.map(q => ({ q: q.q, options: q.o, answer: q.a, explain: q.x })),
   exam_day: d.EXAMDAY || [],
+  rtl: [
+    ...d.RTL_LESSONS.map(([n, u, en, ru, dt, a]) => ({ id: "l" + n, kind: "lesson", n, url: u, en, ru, date: dt, audio: a })),
+    ...d.RTL_BASICS.map(([n, u, en, ru, dt, a]) => ({ id: "b" + n, kind: "basics", n, url: u, en, ru, date: dt, audio: a })),
+    { id: "exam", kind: "exam", n: null, url: d.RTL_EXAM[0], en: d.RTL_EXAM[1], ru: d.RTL_EXAM[2], date: d.RTL_EXAM[3], audio: false },
+    ...d.RTL_OTHER.map(([u, en, ru, dt]) => ({ id: "o" + u.match(/(\d+)$/)[1], kind: "other", n: null, url: u, en, ru, date: dt, audio: false })),
+  ].map(x => ({ ...x, week: d.RTL_PLAN[x.id] ?? null })),
 };
 fs.writeFileSync(path.join(__dirname, "..", "data.json"), JSON.stringify(out, null, 1) + "\n");
 console.log("topics", out.topics.length, "vocab groups", out.vocab.length, "quiz", out.quiz.length, "weeks", out.weeks.length);

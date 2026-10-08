@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sproochentest 18.02.2027 — план и тренажёр</title>
+<title>Sproochentest — план и тренажёр</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,800;1,400&display=swap" rel="stylesheet">
@@ -50,9 +50,23 @@ header.hero{padding:clamp(20px,4vw,40px) 0 14px}
 .count{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .count .big{font-size:clamp(56px,11vw,112px);font-weight:800;letter-spacing:-0.04em;line-height:.9}
 .count .lbl{font-size:clamp(16px,2.2vw,22px);font-weight:500;color:var(--muted);max-width:14em}
-.exam-when{text-align:right;color:var(--muted);font-weight:500}
+.exam-when{text-align:right;color:var(--muted);font-weight:500;max-width:30em}
 .exam-when b{color:var(--ink);font-weight:800;display:block;font-size:clamp(18px,2.4vw,24px)}
-.strip{margin-top:18px;display:grid;grid-template-columns:repeat(21,1fr);gap:3px}
+.strip{margin-top:18px;display:grid;grid-template-columns:repeat(var(--n,21),1fr);gap:3px}
+.strip.dense button span{display:none}
+.exam-when .link{color:var(--blue);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.setup{margin:4px 0 18px}
+.setup h3{margin-top:14px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:8px}
+.opt{display:block;text-align:left;border:1.5px solid var(--line);border-radius:var(--radius-s);padding:10px 12px;background:var(--paper)}
+.opt b{display:block}
+.opt span{color:var(--muted);font-size:14px}
+.opt[aria-checked="true"]{border-color:var(--blue);box-shadow:0 0 0 1.5px var(--blue) inset}
+.opt-inline{display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:15px}
+.opt-inline input{margin-top:4px}
+.mod + .mod{margin-top:18px;padding-top:14px;border-top:1px solid var(--line2)}
+.mod>h3:first-child{margin-bottom:-4px}
+body.setup-mode .hero,body.setup-mode .tabs,body.setup-mode .panel{display:none!important}
 .strip button{height:38px;border-radius:5px;background:var(--seg);opacity:.35;position:relative;transition:opacity .15s,transform .15s}
 .strip button.past{opacity:.75}
 .strip button.now{opacity:1;outline:3px solid var(--sun);outline-offset:2px;transform:scaleY(1.18)}
@@ -254,11 +268,37 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       <div class="big" id="days">—</div>
       <div class="lbl" id="dayslbl">дней до экзамена</div>
     </div>
-    <div class="exam-when"><b>Четверг, 18 февраля 2027</b>Sproochentest Lëtzebuergesch · INLL · <span id="weeklbl"></span></div>
+    <div class="exam-when"><b id="examwhen"></b>Sproochentest Lëtzebuergesch · INLL · <span id="weeklbl"></span> · <button class="link" id="cfgopen">Настройки</button></div>
   </div>
   <div class="strip" id="strip" role="list" aria-label="Недели подготовки"></div>
   <div class="strip-legend" id="legend"></div>
 </header>
+
+<section class="card setup" id="setup" hidden>
+  <h2 id="setup-h">Настроим план под тебя</h2>
+  <p class="muted" id="setup-sub">Три вопроса, и план разложится по неделям до твоего экзамена. Всё можно поменять потом в «Настройках».</p>
+  <form id="setupform" novalidate>
+    <h3>Когда экзамен?</h3>
+    <div class="row" style="margin-top:8px">
+      <input type="date" id="cfg-exam" class="sync-in" style="flex:0 1 200px" aria-label="Дата экзамена">
+      <label class="opt-inline"><input type="checkbox" id="cfg-noexam"> Даты пока нет, занимаюсь в своём темпе</label>
+    </div>
+    <p class="muted" style="margin:6px 0 0;font-size:14px">Даты сессий и запись — в <a href="https://myinl.inll.lu/exam/offer/sproochentest-8" target="_blank" rel="noopener">MyINL</a>.</p>
+    <h3 style="margin-top:18px">С чего начинаешь?</h3>
+    <div class="opts" id="cfg-level" role="radiogroup" aria-label="Уровень"></div>
+    <h3 style="margin-top:18px">Сколько времени в день?</h3>
+    <div class="chips" id="cfg-mins" role="radiogroup" aria-label="Минут в день"></div>
+    <label class="opt-inline" id="cfg-restart-row" hidden><input type="checkbox" id="cfg-restart"> Начать план заново с этой недели. Уже пройденные недели не повторятся</label>
+    <div class="row" style="margin-top:16px"><button class="btn sun" type="submit" id="cfg-save">Построить план</button><button class="btn ghost" type="button" id="cfg-cancel" hidden>Отмена</button></div>
+    <div class="sync-st err" id="cfg-err"></div>
+  </form>
+  <div id="setup-sync">
+    <hr class="soft">
+    <p class="muted" style="margin:0">Уже занимаешься на другом устройстве? <button class="link" id="setup-code" type="button">Ввести код синхронизации</button></p>
+    <form class="row" id="setup-codeform" hidden style="margin-top:10px"><input class="sync-in" id="setup-codein" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="слово-слово-слово-1234" aria-label="Код синхронизации"><button class="btn" type="submit">Подключить</button></form>
+    <div class="sync-st" id="setup-codest"></div>
+  </div>
+</section>
 
 <nav class="tabs" id="tabs" role="tablist"></nav>
 
@@ -267,14 +307,11 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
     <div class="card">
       <div class="kicker" id="today-date"></div>
       <h2 id="today-title"></h2>
-      <div class="focus" id="today-focus"></div>
-      <h3>Задачи недели</h3>
-      <ul class="tasks" id="today-tasks"></ul>
-      <div id="today-rtl"></div>
+      <div id="today-body"></div>
     </div>
     <div>
       <div class="card">
-        <h3>30 минут в день, в этом порядке</h3>
+        <h3 id="routine-h">30 минут в день, в этом порядке</h3>
         <p class="muted" style="margin-top:4px">Уши — первыми, пока голова свежая. Говорение — вслух, не глазами. Если дня нет совсем — только первые два пункта.</p>
         <div class="routine">
           <div><div class="min">8<small>мин</small></div>Аудио: сюжет RTL или 100,7. Задание недели во вкладке «Аудирование».</div>
@@ -285,8 +322,8 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
         <hr class="soft">
         <div class="row" style="justify-content:space-between">
           <div class="stat"><div><div class="n" id="streak">0</div><div class="t">дней подряд</div></div></div>
-          <div class="stat"><div><div class="n" id="daysdone">0</div><div class="t">дней занятий из <span id="daystotal"></span></div></div></div>
-          <button class="btn sun" id="markday">Сегодня занимался</button>
+          <div class="stat"><div><div class="n" id="daysdone">0</div><div class="t">дней занятий<span id="daystotal"></span></div></div></div>
+          <button class="btn sun" id="markday">Отметить занятие сегодня</button>
         </div>
         <div class="days" id="daygrid" aria-label="Календарь занятий"></div>
       </div>
@@ -318,7 +355,7 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 </section>
 
 <section class="panel" id="p-plan" hidden>
-  <p class="lead">Двадцать недель с конкретными датами, понедельник–воскресенье. Расчёт: 30 минут в день, старт с приветствий, чисел и пары сотен слов. Отмечай пункты — прогресс сохраняется.</p>
+  <p class="lead" id="planlead"></p>
   <div class="row" style="margin-bottom:6px"><button class="btn ghost" id="openall">Развернуть все недели</button><button class="btn ghost" id="resetplan">Сбросить отметки плана</button></div>
   <div id="planhost"></div>
   <div class="card" style="margin-top:22px">
@@ -447,13 +484,13 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
       <li>Не застревать на непонятом слове: пока разбираешься, проходят два следующих предложения.</li>
       <li>Отвечать сразу, вчерне. Пустой ответ — гарантированный ноль, угаданный — шанс.</li>
       <li>Люксембургский на слух ближе к немецкому, чем на письме. Немецкие корни — опора.</li>
-      <li>Официальное аудио INL прорешать трижды: неделя 0 (точка отсчёта), неделя 10, неделя 17. Ссылки во вкладке «Ресурсы».</li>
+      <li>Официальное аудио INL прорешать трижды: на старте (точка отсчёта), на чекпоинте второго этапа и в начале симуляций. Ссылки во вкладке «Ресурсы».</li>
     </ul>
   </div>
 </section>
 
 <section class="panel" id="p-rtl" hidden>
-  <p class="lead">Бесплатный курс RTL Today «Learn Luxembourgish» на английском: 20 разговорных уроков с аудио, 19 уроков грамматики, итоговый тест и семь полезных материалов. Всё разложено по неделям плана под тему и грамматику недели и закончено к 24 января — последние четыре недели остаются для симуляций. Отмечай пройденное — прогресс синхронизируется вместе с остальным.</p>
+  <p class="lead">Бесплатный курс RTL Today «Learn Luxembourgish» на английском: 20 разговорных уроков с аудио, 19 уроков грамматики, итоговый тест и семь полезных материалов. Всё разложено по неделям плана под тему и грамматику недели; последние недели перед экзаменом остаются для симуляций. Отмечай пройденное — прогресс синхронизируется вместе с остальным.</p>
   <div class="note"><b>Когда заниматься.</b> Ежедневные 30 минут не трогаем. Курс RTL — в выходные: одна сессия 30–40 минут, урок недели и его грамматика. Аудио из урока можно слушать и в будни вместо радио.</div>
   <div class="row" style="justify-content:space-between">
     <div class="stat"><div><div class="n" id="rtlN">0</div><div class="t">из <span id="rtlT"></span> пройдено</div></div></div>
@@ -476,14 +513,14 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
     <div id="reshost"></div>
     <div>
       <div class="card">
-        <h3>День экзамена, 18 февраля</h3>
+        <h3>День экзамена<span id="examdayh"></span></h3>
         <ul class="tasks" id="examday"></ul>
       </div>
       <div class="card">
         <h3>Факты</h3>
         <div class="tbl"><table>
           <tr><th>Стоимость</th><td>75 €, возмещается при подаче на гражданство при соблюдении условий</td></tr>
-          <tr><th>Письмо INL</th><td>Время и площадка — не позже чем за 15 дней, то есть до 3 февраля</td></tr>
+          <tr><th>Письмо INL</th><td>Время и площадка — не позже чем за 15 дней до экзамена<span id="letterby"></span></td></tr>
           <tr><th>Площадки</th><td>Glacis: 21, bd de la Foire, Luxembourg · Belval: 14, Porte de France, Esch-sur-Alzette</td></tr>
           <tr><th>Документ</th><td>Оригинал: удостоверение, паспорт, вид на жительство или проездной документ. Копии не принимают</td></tr>
           <tr><th>Пересдача</th><td>Без лимита, но новая запись — только после результата</td></tr>
@@ -497,89 +534,89 @@ footer{color:var(--muted);font-size:14px;padding:0 0 40px;max-width:70ch}
 </div>
 <script>
 /* ============ DATA ============ */
-const EXAM_DATE = new Date(2027,1,18);
 const PHASES = [
-  {id:"p1", name:"Фундамент", range:"2 окт – 1 ноя", color:"var(--p1)", weeks:[0,1,2,3,4],
+  {id:"p1", name:"Фундамент", color:"var(--p1)", weeks:[0,1,2,3,4],
    goal:"Звуки, sinn/hunn, настоящее время, первые четыре темы. К концу — минута о себе без бумажки."},
-  {id:"p2", name:"Perfekt и бытовые темы", range:"2 ноя – 13 дек", color:"var(--p2)", weeks:[5,6,7,8,9,10],
+  {id:"p2", name:"Perfekt и бытовые темы", color:"var(--p2)", weeks:[5,6,7,8,9,10],
    goal:"Прошедшее время, придаточные, шаблон описания фото, ещё шесть тем. К концу — 90 секунд на любую из десяти тем."},
-  {id:"p3", name:"Темы экзамена", range:"14 дек – 24 янв", color:"var(--p3)", weeks:[11,12,13,14,15,16],
+  {id:"p3", name:"Темы экзамена", color:"var(--p3)", weeks:[11,12,13,14,15,16],
    goal:"Официальные примеры INL, встречные вопросы, фразы-спасатели, оставшиеся темы. К концу — первая полная симуляция."},
-  {id:"p4", name:"Симуляции", range:"25 янв – 18 фев", color:"var(--p4)", weeks:[17,18,19,20],
+  {id:"p4", name:"Симуляции", color:"var(--p4)", weeks:[17,18,19,20],
    goal:"Два–три прогона в неделю по таймеру, живая практика, логистика. Новой грамматики больше нет."}
 ];
-/* week: start date (y,m,d), label, title, grammar, topic key, listening, tasks */
-const WEEKS = [
- {s:[2026,9,2],e:[2026,9,4],n:0,t:"Стартовые выходные",g:"—",topic:"iwwer",
+/* Plan modules, one per study week: n, title, grammar, topic key, listening, tasks.
+   They carry no dates; the schedule (see SCHEDULE) lays them onto the learner's calendar. */
+const MODS = [
+ {n:0,t:"Старт",g:"—",topic:"iwwer",
   l:"Официальное аудио INL один раз, без остановок. Результат записать — это точка отсчёта.",
   tasks:["Скачать mp3 + бланк + ключ INL (вкладка «Ресурсы») и прорешать один раз","Записать на диктофон 30 секунд о себе — как получится","Поставить RTL или 100,7 фоном в дороге и на кухне","Открыть DOK-56 и DOK-57 (официальные примеры тем) и просто посмотреть формат"]},
- {s:[2026,9,5],n:1,t:"Звуки и два главных глагола",g:"sinn и hunn во всех лицах; звуки ë, é, ä, ei, ou, ch",topic:"iwwer",
+ {n:1,t:"Звуки и два главных глагола",g:"sinn и hunn во всех лицах; звуки ë, é, ä, ei, ou, ch",topic:"iwwer",
   l:"10 минут RTL в день без разбора. Задача одна — привыкнуть к мелодике.",
   tasks:["Каждое новое слово слушать в LOD.lu, не читать по-немецки","sinn и hunn — проговорить 30 раз, пока не выходит без паузы","Тема «Iwwer mech»: 6 фраз вслух каждый день","Карточки «Знакомство» и «Семья» — пройти до звёздочек"]},
- {s:[2026,9,12],n:2,t:"Настоящее время",g:"Präsens -en / -s / -t; вопросительные слова Wien, Wat, Wou, Wéini, Wéi, Firwat",topic:"famill",
+ {n:2,t:"Настоящее время",g:"Präsens -en / -s / -t; вопросительные слова Wien, Wat, Wou, Wéini, Wéi, Firwat",topic:"famill",
   l:"10 минут RTL + один раз в неделю прогноз погоды: ловить только числа.",
   tasks:["20 самых частых глаголов в настоящем времени (goen, kommen, maachen, schaffen, wunnen, schwätzen, iessen, drénken…)","Тема «Famill»: 6 фраз + 3 вопроса экзаменатора","Карточки «Дом» и «Еда»","Диктофон: 45 секунд о семье"]},
- {s:[2026,9,19],n:3,t:"Числа, время, артикли",g:"Zuelen 1–100, Auer, Deeg; артикли den / d' / en / eng",topic:"alldag",
+ {n:3,t:"Числа, время, артикли",g:"Zuelen 1–100, Auer, Deeg; артикли den / d' / en / eng",topic:"alldag",
   l:"Прогноз погоды и объявления: записать все услышанные числа и время.",
   tasks:["Числа до 100 и время вслух на скорость — 3 минуты в день","Тема «Alldag»: распорядок дня от подъёма до сна","Карточки «Погода и время», «Транспорт»","Eifeler Regel: прочитать правило, начать слышать выпадение -n"]},
- {s:[2026,9,26],n:4,t:"Модальные глаголы и порядок слов",g:"kann, muss, wëll, soll, däerf + инфинитив в конце; глагол на втором месте",topic:"wunnen",
+ {n:4,t:"Модальные глаголы и порядок слов",g:"kann, muss, wëll, soll, däerf + инфинитив в конце; глагол на втором месте",topic:"wunnen",
   l:"Первый проход метода «три прохода» на коротком сюжете RTL (2 минуты).",
-  tasks:["Тема «Wunnen»: квартира, район, аренда","Чекпоинт фазы: 60 секунд о себе без листа, записать на диктофон и сравнить с W0","Решить про живую практику: курс INL (A1.2/A2), Sproochcafé в коммуне или репетитор — к концу недели одно из трёх выбрано","Квиз по грамматике в тренажёре — не меньше 8 из 12"]},
- {s:[2026,10,2],n:5,t:"Perfekt с hunn",g:"hunn + Partizip: gemaach, geschafft, giess, gedronk, kaaft, gelies, gekuckt…",topic:"aarbecht",
+  tasks:["Тема «Wunnen»: квартира, район, аренда","Чекпоинт этапа: 60 секунд о себе без листа, записать на диктофон и сравнить со стартовой записью","Решить про живую практику: курс INL (A1.2/A2), Sproochcafé в коммуне или репетитор — к концу недели одно из трёх выбрано","Квиз по грамматике в тренажёре — не меньше 8 из 12"]},
+ {n:5,t:"Perfekt с hunn",g:"hunn + Partizip: gemaach, geschafft, giess, gedronk, kaaft, gelies, gekuckt…",topic:"aarbecht",
   l:"15 минут в день. Три прохода — два раза в неделю.",
   tasks:["15 причастий наизусть, в предложениях о вчерашнем дне","Тема «Aarbecht»: что делаю, график, что нравится","Карточки «Работа», «Покупки»","Диктофон: «Wat hues du gëschter gemaach?» — 60 секунд"]},
- {s:[2026,10,9],n:6,t:"Perfekt с sinn",g:"sinn + Partizip для движения и изменения: gaangen, gefuer, komm, bliwwen, opgestan",topic:"fraizait",
+ {n:6,t:"Perfekt с sinn",g:"sinn + Partizip для движения и изменения: gaangen, gefuer, komm, bliwwen, opgestan",topic:"fraizait",
   l:"Подкасты RTL с двумя голосами: кто что сказал.",
   tasks:["10 глаголов движения в Perfekt","Тема «Fräizäit an Hobbyen»","Рассказать о прошлых выходных — 90 секунд, записать","Карточки «Здоровье»"]},
- {s:[2026,10,16],n:7,t:"Придаточные",g:"well, datt, wann, wéi — глагол в конец: …, well ech midd sinn",topic:"iessen",
+ {n:7,t:"Придаточные",g:"well, datt, wann, wéi — глагол в конец: …, well ech midd sinn",topic:"iessen",
   l:"Три прохода — три раза в неделю. Выписывать 5 повторяющихся непонятных слов.",
   tasks:["Тема «Iessen an Akafen»","К каждой фразе любой темы добавить «, well …» — 10 примеров вслух","Связки an / awer / mee / duerno / dofir — в речи, не в тетради","Квиз по грамматике — 10 из 12"]},
- {s:[2026,10,23],n:8,t:"Описание фото: шаблон",g:"Предлоги места: am Virdergrond, am Hannergrond, lénks, riets, an der Mëtt",topic:"wieder",
+ {n:8,t:"Описание фото: шаблон",g:"Предлоги места: am Virdergrond, am Hannergrond, lénks, riets, an der Mëtt",topic:"wieder",
   l:"15 минут диалогов + разбор одного прогноза погоды.",
   tasks:["Выучить 6 шагов шаблона описания фото (вкладка «Фото»)","Описать 5 случайных фото из телефона по шаблону, 2 минуты каждое, на диктофон","Тема «Wieder a Joreszäiten»","Открыть официальный пример a2-bild1-2023.pdf и описать его"]},
- {s:[2026,10,30],n:9,t:"Датив и предлоги",g:"mat der Famill, bei der Aarbecht, vun der Stad, an engem Appartement, zu Lëtzebuerg",topic:"transport",
+ {n:9,t:"Датив и предлоги",g:"mat der Famill, bei der Aarbecht, vun der Stad, an engem Appartement, zu Lëtzebuerg",topic:"transport",
   l:"Дорожная сводка RTL: направления, места, время.",
   tasks:["Тема «Transport a Verkéier»","10 предложений с mat / bei / vun / an / zu — вслух","Описать ещё 5 фото по шаблону","Если живой практики ещё нет — записаться на Sproochcafé или найти tandem в этой неделе"]},
- {s:[2026,11,7],n:10,t:"Чекпоинт фазы 2",g:"Повторение: Präsens, Perfekt, Modalverben, Nebensätze",topic:"gesondheet",
-  l:"Официальное аудио INL второй раз. Сравнить с W0 — разрыв должен быть виден.",
+ {n:10,t:"Чекпоинт фазы 2",g:"Повторение: Präsens, Perfekt, Modalverben, Nebensätze",topic:"gesondheet",
+  l:"Официальное аудио INL второй раз. Сравнить со стартом — разрыв должен быть виден.",
   tasks:["Тема «Gesondheet a Sport»","Монолог 90 секунд на 6 случайных тем из тренажёра — без подготовки","Прорешать официальное аудио второй раз, записать результат","Квиз по грамматике — 12 из 12"]},
- {s:[2026,11,14],n:11,t:"Официальная тема: сон и отдых",g:"Повторение Perfekt; частотные наречия ëmmer, dacks, heiansdo, ni",topic:"schlof",
+ {n:11,t:"Официальная тема: сон и отдых",g:"Повторение Perfekt; частотные наречия ëmmer, dacks, heiansdo, ni",topic:"schlof",
   l:"Диалоги: кто чего хочет, кто с чем не согласен, о чём договорились в конце.",
   tasks:["Прогнать DOK-56 «Schlof an Entspanung» целиком","Тема «Schlof an Entspanung»: все фразы + встречный вопрос «An Dir?» после каждого ответа","Симулятор устной части: 1 прогон беседы по таймеру","Описать 5 фото"]},
- {s:[2026,11,21],n:12,t:"Официальная тема: праздники",g:"Даты и месяцы: den 23. Juni, am Dezember, op Chrëschtdag",topic:"fester",
+ {n:12,t:"Официальная тема: праздники",g:"Даты и месяцы: den 23. Juni, am Dezember, op Chrëschtdag",topic:"fester",
   l:"Лёгкая неделя: только радио фоном и карточки. Новых разборов нет.",
-  tasks:["Прогнать DOK-57 «Fester» — тема сама в календаре, говорить о Рождестве легко","Тема «Fester»: как празднуем дома, что в Люксембурге","Карточки: только повторение, ничего нового","Радио 100,7 во время готовки"]},
- {s:[2026,11,28],n:13,t:"Поездки и повторение",g:"Perfekt с sinn в поездках: si mir gefuer, sinn ech gefloen",topic:"rees",
+  tasks:["Прогнать DOK-57 «Fester» целиком","Тема «Fester»: любимый праздник, как празднуем дома, что празднуют в Люксембурге","Карточки: только повторение, ничего нового","Радио 100,7 во время готовки"]},
+ {n:13,t:"Поездки и повторение",g:"Perfekt с sinn в поездках: si mir gefuer, sinn ech gefloen",topic:"rees",
   l:"Лёгкая неделя. Один длинный подкаст без разбора, просто слушать.",
-  tasks:["Тема «Rees a Vakanz»: прошлый отпуск и планы","Пройти колоду всех тем один раз, отметить забытое","Диктофон: 2 минуты «Wat hutt Dir iwwer d'Feierdeeg gemaach?»","Отдых — это тоже план"]},
- {s:[2027,0,4],n:14,t:"Люксембург и языки",g:"Сравнение: méi … wéi, am léifsten, besser; Futur с wäerten или Präsens + muer",topic:"letzebuerg",
+  tasks:["Тема «Rees a Vakanz»: прошлый отпуск и планы","Пройти колоду всех тем один раз, отметить забытое","Диктофон: 2 минуты о последнем отпуске или празднике","Отдых — это тоже план"]},
+ {n:14,t:"Люксембург и языки",g:"Сравнение: méi … wéi, am léifsten, besser; Futur с wäerten или Präsens + muer",topic:"letzebuerg",
   l:"20 минут в день. Три прохода — три раза в неделю, фрагменты по 3 минуты.",
   tasks:["Темы «Liewen zu Lëtzebuerg» и «Sproochen a Léieren»","Фразы-спасатели наизусть и — главное — в живой речи с партнёром","Симулятор: 2 прогона беседы","Пройти тест уровня на LLO.lu, записать результат"]},
- {s:[2027,0,11],n:15,t:"Медиа, друзья, соседи",g:"Местоимения в дативе: mir, dir, him, hir, eis, iech, hinnen",topic:"medien",
+ {n:15,t:"Медиа, друзья, соседи",g:"Местоимения в дативе: mir, dir, him, hir, eis, iech, hinnen",topic:"medien",
   l:"Выступление / мнение: ловить awer, well, ech mengen, ech sinn net d'accord.",
   tasks:["Темы «Medien, Handy an Internet» и «Frënn an Noperen»","10 фото по таймеру 2 минуты — без пауз дольше 3 секунд","Симулятор: 2 прогона, один — с записью и прослушиванием себя","Список своих слабых тем — 3 штуки"]},
- {s:[2027,0,18],n:16,t:"Чекпоинт фазы 3: первая полная симуляция",g:"Повторение всего минимума",topic:"natur",
+ {n:16,t:"Чекпоинт фазы 3: первая полная симуляция",g:"Повторение всего минимума",topic:"natur",
   l:"Первая полная симуляция аудирования: 35 минут, один раз, без пауз.",
   tasks:["Темы «Natur an Déieren» и «Kleeder»","Полная симуляция: 5 мин беседа + 5 мин фото + 35 мин аудио, по таймеру, записать","Договориться о 2 сессиях с носителем или репетитором на фазу 4","Квиз по грамматике — 12 из 12 второй раз подряд"]},
- {s:[2027,0,25],n:17,t:"Режим экзамена",g:"Никакой новой грамматики",topic:"all",
+ {n:17,t:"Режим экзамена",g:"Никакой новой грамматики",topic:"all",
   l:"Официальное аудио INL третий, последний раз. Разобрать каждую ошибку.",
-  tasks:["2 полные симуляции устной части","Сессия с носителем: попросить задавать вопросы как экзаменатор","Три слабые темы — по 3 монолога на каждую","Проверить почту: письмо INL с временем и площадкой приходит не позже 3 февраля"]},
- {s:[2027,1,1],n:18,t:"Три симуляции",g:"—",topic:"all",
+  tasks:["2 полные симуляции устной части","Сессия с носителем: попросить задавать вопросы как экзаменатор","Три слабые темы — по 3 монолога на каждую","Проверить почту: письмо INL с временем и площадкой приходит не позже чем за 15 дней до экзамена"]},
+ {n:18,t:"Три симуляции",g:"—",topic:"all",
   l:"Аудио в условиях экзамена: читать вопросы до звучания, не застревать.",
-  tasks:["3 симуляции устной части, разные дни","Первые 30 секунд ответа на каждую из 18 тем — отрепетировать","Вторая сессия с носителем","Если письма INL нет к 3 февраля — написать в INLL"]},
- {s:[2027,1,8],n:19,t:"Доводка",g:"—",topic:"all",
+  tasks:["3 симуляции устной части, разные дни","Первые 30 секунд ответа на каждую из 18 тем — отрепетировать","Вторая сессия с носителем","Если письма INL нет за 15 дней до экзамена — написать в INLL"]},
+ {n:19,t:"Доводка",g:"—",topic:"all",
   l:"Диалоги и радио 20 минут в день, без разбора.",
   tasks:["3 симуляции, последняя — полностью на люксембургском без переходов","Маршрут до площадки (Glacis или Belval): проверить время в пути, парковку или поезд","Фразы-спасатели — 10 раз вслух каждый день","Документ для экзамена: проверить срок действия удостоверения или паспорта"]},
- {s:[2027,1,15],e:[2027,1,18],n:20,t:"Экзаменационная неделя",g:"—",topic:"all",
-  l:"Пн–Вт: лёгкое аудио. Ср: радио фоном и отдых. Чт: ничего.",
-  tasks:["Пн: 1 короткая симуляция, фото по шаблону","Вт: только повторение фраз-спасателей и рассказа о себе","Ср: ранний сон, документ и маршрут готовы","Чт 18 февраля: приехать за 20 минут, с оригиналом документа. Говорить просто, не молчать, переспрашивать"]}
+ {n:20,t:"Экзаменационная неделя",g:"—",topic:"all",
+  l:"За 3–2 дня: лёгкое аудио. Накануне: радио фоном и отдых. В день экзамена: ничего.",
+  tasks:["За 3 дня: 1 короткая симуляция, фото по шаблону","За 2 дня: только повторение фраз-спасателей и рассказа о себе","Накануне: ранний сон, документ и маршрут готовы","В день экзамена: приехать за 20 минут, с оригиналом документа. Говорить просто, не молчать, переспрашивать"]}
 ];
 
 const TOPICS = [
  {k:"iwwer", lb:"Iwwer mech", ru:"О себе", q:[["Kënnt Dir mir eppes iwwer Iech erzielen?","Расскажите немного о себе."],["Wéi laang wunnt Dir scho zu Lëtzebuerg?","Как долго вы живёте в Люксембурге?"],["Firwat léiert Dir Lëtzebuergesch?","Почему вы учите люксембургский?"]],
   p:[["Ech heeschen … an ech kommen ursprénglech aus …","Меня зовут …, я родом из …"],["Ech wunnen zënter e puer Joer zu Lëtzebuerg.","Я живу в Люксембурге уже несколько лет."],["Ech schwätzen …, … an e bëssen Lëtzebuergesch.","Я говорю по-…, по-… и немного по-люксембургски."],["Ech léiere Lëtzebuergesch, well ech hei liewen a schaffen.","Я учу люксембургский, потому что живу и работаю здесь."],["Et ass net ëmmer einfach, mee et mécht mir Spaass.","Это не всегда легко, но мне нравится."]]},
  {k:"famill", lb:"Famill", ru:"Семья", q:[["Hutt Dir Famill hei zu Lëtzebuerg?","У вас есть семья здесь, в Люксембурге?"],["Wat maacht Dir am Weekend mat der Famill?","Что вы делаете с семьёй по выходным?"],["Wou wunnen Är Elteren?","Где живут ваши родители?"]],
-  p:[["Ech si bestuet. Meng Fra heescht …","Я женат. Мою жену зовут…"],["Mir hunn e Jong an eng Duechter.","У нас сын и дочь."],["Meng Elteren wunnen net hei, si wunnen am Ausland.","Мои родители живут не здесь, а за границей."],["Um Weekend maache mir gär eppes zesummen.","По выходным мы любим что-то делать вместе."],["Mir telefonéieren all Woch mat der Famill.","Мы каждую неделю созваниваемся с семьёй."]]},
+  p:[["Ech si bestuet. Meng Fra / Mäi Mann heescht …","Я в браке. Мою жену / моего мужа зовут…"],["Mir hunn e Jong an eng Duechter.","У нас сын и дочь."],["Meng Elteren wunnen net hei, si wunnen am Ausland.","Мои родители живут не здесь, а за границей."],["Um Weekend maache mir gär eppes zesummen.","По выходным мы любим что-то делать вместе."],["Mir telefonéieren all Woch mat der Famill.","Мы каждую неделю созваниваемся с семьёй."]]},
  {k:"alldag", lb:"Alldag", ru:"Распорядок дня", q:[["Wéi gesäit en normalen Dag bei Iech aus?","Как выглядит ваш обычный день?"],["Wéini stitt Dir moies op?","Во сколько вы встаёте утром?"],["Wat maacht Dir owes?","Что вы делаете вечером?"]],
   p:[["Ech stinn all Dag um sechs Auer op.","Я встаю каждый день в шесть."],["Duerno drénken ech e Kaffi a liesen d'Noriichten.","Потом я пью кофе и читаю новости."],["Ech fueren mam Zuch op d'Aarbecht.","Я езжу на работу на поезде."],["Mëttes iessen ech eppes Klenges.","В обед я ем что-нибудь лёгкое."],["Owes kachen ech an duerno kucken ech e bëssen Tëlee.","Вечером я готовлю, а потом немного смотрю телевизор."],["Ech ginn ëm eelef Auer schlofen.","Я ложусь спать в одиннадцать."]]},
  {k:"wunnen", lb:"Wunnen", ru:"Жильё", q:[["Wou wunnt Dir?","Где вы живёте?"],["Wéi ass Är Wunneng?","Какая у вас квартира?"],["Gefält Iech Äert Quartier?","Вам нравится ваш район?"]],
@@ -597,11 +634,11 @@ const TOPICS = [
  {k:"gesondheet", lb:"Gesondheet a Sport", ru:"Здоровье и спорт", q:[["Wat maacht Dir, fir gesond ze bleiwen?","Что вы делаете, чтобы оставаться здоровым?"],["Wéi dacks maacht Dir Sport?","Как часто вы занимаетесь спортом?"],["Gitt Dir dacks bei den Dokter?","Вы часто ходите к врачу?"]],
   p:[["Ech fille mech gutt.","Я чувствую себя хорошо."],["Fir gesond ze bleiwen, maachen ech Sport.","Чтобы оставаться здоровым, я занимаюсь спортом."],["Ech ginn zweemol d'Woch an de Fitness.","Я хожу в спортзал два раза в неделю."],["Ech ginn eemol d'Joer bei den Dokter.","Я хожу к врачу раз в год."],["Ech probéieren, méi ze Fouss ze goen.","Я стараюсь больше ходить пешком."],["Wann ech Kappwéi hunn, huelen ech e Medikament.","Когда у меня болит голова, я принимаю лекарство."]]},
  {k:"schlof", lb:"Schlof an Entspanung", ru:"Сон и отдых", q:[["Wéi vill Stonne schlooft Dir pro Nuecht?","Сколько часов вы спите за ночь?"],["Wat maacht Dir, fir Iech z'entspanen?","Что вы делаете, чтобы расслабиться?"],["Schlooft Dir gutt?","Вы хорошо спите?"]],
-  p:[["Ech schlofe meeschtens siwe Stonnen.","Я обычно сплю семь часов."],["Wann ech midd sinn, ginn ech fréi schlofen.","Когда я устал, я ложусь рано."],["Fir mech z'entspanen, ginn ech spazéieren.","Чтобы расслабиться, я хожу гулять."],["Ech kucken owes net ze laang um Handy.","Вечером я стараюсь недолго сидеть в телефоне."],["Am Weekend schlofen ech e bësse méi laang.","По выходным я сплю чуть дольше."],["Stress op der Aarbecht ass heiansdo e Problem.","Стресс на работе иногда проблема."]]},
+  p:[["Ech schlofe meeschtens siwe Stonnen.","Я обычно сплю семь часов."],["Wann ech midd sinn, ginn ech fréi schlofen.","Когда я устал(а), я ложусь рано."],["Fir mech z'entspanen, ginn ech spazéieren.","Чтобы расслабиться, я хожу гулять."],["Ech kucken owes net ze laang um Handy.","Вечером я стараюсь недолго сидеть в телефоне."],["Am Weekend schlofen ech e bësse méi laang.","По выходным я сплю чуть дольше."],["Stress op der Aarbecht ass heiansdo e Problem.","Стресс на работе иногда проблема."]]},
  {k:"fester", lb:"Fester", ru:"Праздники", q:[["Wéi feiert Dir Chrëschtdag?","Как вы празднуете Рождество?"],["Wat ass Äert Liiblingsfest?","Какой ваш любимый праздник?"],["Waart Dir schonn op der Schueberfouer?","Вы уже были на Schueberfouer?"]],
   p:[["Zu Lëtzebuerg ass den Nationalfeierdag den 23. Juni.","Национальный праздник Люксембурга — 23 июня."],["Mir feieren d'Gebuertsdeeg mat der Famill.","Дни рождения мы отмечаем в кругу семьи."],["Ech ginn all Joer op d'Schueberfouer.","Я каждый год хожу на Schueberfouer."],["Ech invitéiere gär Frënn op en Iessen.","Я люблю приглашать друзей на ужин."],["De Chrëschtmaart an der Stad ass ganz schéin.","Рождественский рынок в городе очень красивый."],["An … feiere mir … méi grouss wéi Chrëschtdag.","В … … празднуют масштабнее Рождества."]]},
  {k:"rees", lb:"Rees a Vakanz", ru:"Поездки и отпуск", q:[["Wou waart Dir an der leschter Vakanz?","Где вы были в прошлый отпуск?"],["Reest Dir gär?","Вы любите путешествовать?"],["Wat sinn Är Pläng fir de Summer?","Какие у вас планы на лето?"]],
-  p:[["Am Summer fuere mir an d'Vakanz.","Летом мы едем в отпуск."],["Ech reese gär mam Auto.","Я люблю путешествовать на машине."],["Lescht Joer si mir op Spuenien gefuer.","В прошлом году мы ездили в Испанию."],["Ech si scho vill an Europa gereest.","Я уже много поездил по Европе."],["Dëst Joer wëlle mir un d'Mier.","В этом году мы хотим на море."]]},
+  p:[["Am Summer fuere mir an d'Vakanz.","Летом мы едем в отпуск."],["Ech reese gär mam Auto.","Я люблю путешествовать на машине."],["Lescht Joer si mir op Spuenien gefuer.","В прошлом году мы ездили в Испанию."],["Ech si scho vill an Europa gereest.","Я уже много поездил(а) по Европе."],["Dëst Joer wëlle mir un d'Mier.","В этом году мы хотим на море."]]},
  {k:"letzebuerg", lb:"Liewen zu Lëtzebuerg", ru:"Жизнь в Люксембурге", q:[["Wat gefält Iech zu Lëtzebuerg?","Что вам нравится в Люксембурге?"],["Wat ass anescht wéi an Ärem Land?","Что отличается от вашей страны?"],["Wat gefält Iech net sou gutt?","Что вам не очень нравится?"]],
   p:[["Mir gefält, datt Lëtzebuerg roueg a sécher ass.","Мне нравится, что Люксембург спокойный и безопасный."],["D'Natur ass schéin an d'Stad ass propper.","Природа красивая, и город чистый."],["Et gi vill Leit aus verschiddene Länner hei.","Здесь много людей из разных стран."],["D'Loyere sinn héich, dat ass e Problem.","Аренда высокая, это проблема."],["Am Verglach mat … ass d'Land ganz kleng.","По сравнению с … страна очень маленькая."]]},
  {k:"sproochen", lb:"Sproochen a Léieren", ru:"Языки и учёба", q:[["Wéi eng Sprooche schwätzt Dir?","На каких языках вы говорите?"],["Wéi léiert Dir Lëtzebuergesch?","Как вы учите люксембургский?"],["Wat ass schwéier am Lëtzebuergeschen?","Что сложно в люксембургском?"]],
@@ -631,10 +668,10 @@ const RESCUE = [
   ["Moment, ech muss kuerz iwwerleeën.","Секунду, мне надо подумать."],
   ["Dat ass eng gutt Fro.","Хороший вопрос."],
   ["Ech weess net genau, wéi ech dat soll soen.","Я не знаю точно, как это сказать."],
-  ["Ech hunn dat net verstanen, entschëllegt.","Я этого не понял, извините."],
+  ["Ech hunn dat net verstanen, entschëllegt.","Я этого не понял(а), извините."],
   ["Ech weess net, wéi dat heescht, mee et ass eppes fir …","Не знаю, как это называется, но это нужно для…"],
   ["Ech mengen, datt …","Я думаю, что…"],
-  ["Ech sinn net sécher, mee …","Я не уверен, но…"]
+  ["Ech sinn net sécher, mee …","Я не уверен(а), но…"]
 ];
 const CONNECT = [
   ["an / awer / mee","и / однако / но"],["well …","потому что… (глагол в конец)"],["duerno / dono","потом, затем"],
@@ -696,7 +733,7 @@ const GRAMS = [
   why:"Два глагола, на которых держится половина ответов: возраст, профессия, семья, самочувствие. С ними же строится прошедшее время.",
   rules:["hien — «он», hatt — «она» для девочек и женщин, которых называют по имени (d'Meedchen — среднего рода), si — «она» и «они».","Dir с большой буквы — вежливое «Вы». К экзаменатору — только так: Wéi geet et Iech?","Возраст, профессия, состояние — через sinn. Голод, жажда, время, дети — через hunn."],
   t:[{h:["","sinn — быть","hunn — иметь","goen — идти"],r:[["ech","sinn","hunn","ginn"],["du","bass","hues","gees"],["hien / hatt","ass","huet","geet"],["mir","sinn","hunn","ginn"],["dir / Dir","sidd","hutt","gitt"],["si","sinn","hunn","ginn"]]}],
-  ex:[["Ech sinn … Joer al.","Мне … лет."],["Ech si midd.","Я устал."],["Ech hunn zwee Kanner.","У меня двое детей."],["Ech hunn Honger an Duuscht.","Я голоден и хочу пить."],["Hatt ass zéng Joer al.","Ей десять лет."],["Mir ginn an d'Stad.","Мы идём в город."],["Hutt Dir Zäit?","У Вас есть время?"]],
+  ex:[["Ech sinn … Joer al.","Мне … лет."],["Ech si midd.","Я устал(а)."],["Ech hunn zwee Kanner.","У меня двое детей."],["Ech hunn Honger an Duuscht.","Я хочу есть и пить."],["Hatt ass zéng Joer al.","Ей десять лет."],["Mir ginn an d'Stad.","Мы идём в город."],["Hutt Dir Zäit?","У Вас есть время?"]],
   trap:"Возраст — с sinn: Ech sinn 40 Joer al. «Ech hunn 40 Joer» — калька с французского, так не говорят."},
  {k:"praesens", lb:"Präsens", ru:"Настоящее время", wk:[2],
   why:"В нём ты описываешь обычный день, работу и жильё — это большая часть беседы. В нём же говорят и о будущем: Muer schaffen ech.",
@@ -740,7 +777,7 @@ const GRAMS = [
   rules:["Большинство глаголов — с hunn: Ech hunn gëschter geschafft.","С sinn — движение и смена состояния: goen, fueren, kommen, bleiwen, opstoen. Mir si gefuer.","Причастие стоит в самом конце: Ech hunn de Weekend vill gelies.","Без ge-: глаголы на -éieren и с приставками be-, ver-, er-: telefonéiert, bezuelt, erzielt.","Для sinn и hunn чаще говорят простое прошедшее: Ech war midd. Ech hat keng Zäit."],
   t:[{h:["Инфинитив","Причастие","С чем"],r:[["maachen","gemaach","hunn"],["schaffen","geschafft","hunn"],["kafen","kaaft","hunn"],["kucken","gekuckt","hunn"],["iessen","giess","hunn"],["drénken","gedronk","hunn"],["liesen","gelies","hunn"],["schreiwen","geschriwwen","hunn"],["gesinn","gesinn","hunn"],["telefonéieren","telefonéiert","hunn"],["goen","gaangen","sinn"],["fueren","gefuer","sinn"],["kommen","komm","sinn"],["bleiwen","bliwwen","sinn"],["opstoen","opgestan","sinn"]]},
      {h:["","sinn → был","hunn → имел"],r:[["ech","war","hat"],["du","waars","has"],["hien / hatt","war","hat"],["mir","waren","haten"],["dir / Dir","waart","hat"],["si","waren","haten"]]}],
-  ex:[["Wat hutt Dir de Weekend gemaach?","Что Вы делали в выходные?"],["Ech hunn e Buch gelies an e Film gekuckt.","Я читал книгу и смотрел фильм."],["Mir si spadséiere gaangen.","Мы ходили гулять."],["Lescht Joer si mir an d'Vakanz gefuer.","В прошлом году мы ездили в отпуск."],["Ech war gëschter krank.","Вчера я болел."],["Ech hat keng Zäit.","У меня не было времени."]],
+  ex:[["Wat hutt Dir de Weekend gemaach?","Что Вы делали в выходные?"],["Ech hunn e Buch gelies an e Film gekuckt.","Я читал(а) книгу и смотрел(а) фильм."],["Mir si spadséiere gaangen.","Мы ходили гулять."],["Lescht Joer si mir an d'Vakanz gefuer.","В прошлом году мы ездили в отпуск."],["Ech war gëschter krank.","Вчера я болел(а)."],["Ech hat keng Zäit.","У меня не было времени."]],
   trap:"Движение — с sinn: не «Ech hunn gefuer», а Ech si gefuer."},
  {k:"nebensaz", lb:"Nebensätz", ru:"Придаточные: well, datt, wann", wk:[7],
   why:"Одно «well …» после ответа превращает короткую фразу в объяснение — это и связность, и грамматика. Правило одно: спрягаемый глагол уходит в конец.",
@@ -759,7 +796,7 @@ const GRAMS = [
   why:"«Мне нравится», «позвоню тебе», «как у Вас дела» — без этих форм не обойтись. Хватит трёх столбцов.",
   rules:["gefalen («нравиться») и hëllefen («помогать») требуют формы «кому»: Dat gefält mir. Kann ech Iech hëllefen?","«Как дела?» — Wéi geet et dir? (тебе), Wéi geet et Iech? (Вам).","В быстрой речи слышны короткие формы: hien → en, hatt → et, si → se, mir → mer, dir → der."],
   t:[{h:["Кто","Кого","Кому"],r:[["ech","mech","mir"],["du","dech","dir"],["hien","hien","him"],["hatt","hatt","him"],["si (она)","si","hir"],["mir","eis","eis"],["dir","iech","iech"],["Dir","Iech","Iech"],["si (они)","si","hinnen"]]}],
-  ex:[["Dat gefält mir gutt.","Мне это очень нравится."],["Ech ruffen dech muer un.","Я позвоню тебе завтра."],["Ech hunn him e Buch ginn.","Я подарил ему книгу."],["Meng Noperen hëllefen eis heiansdo.","Соседи иногда нам помогают."],["Wéi geet et Iech?","Как у Вас дела?"]],
+  ex:[["Dat gefält mir gutt.","Мне это очень нравится."],["Ech ruffen dech muer un.","Я позвоню тебе завтра."],["Ech hunn him e Buch ginn.","Я подарил(а) ему книгу."],["Meng Noperen hëllefen eis heiansdo.","Соседи иногда нам помогают."],["Wéi geet et Iech?","Как у Вас дела?"]],
   trap:"«Мне нравится» — Dat gefält mir, не «mech»."},
  {k:"verglach", lb:"Verglach a gär", ru:"Сравнение и «люблю / предпочитаю»", wk:[14],
   why:"Темы «жизнь в Люксембурге» и «чем отличается ваша страна» сами просят сравнения. А gär — léiwer — am léifsten — самый простой способ рассказать о вкусах.",
@@ -793,18 +830,18 @@ const QUIZ = [
 const RESOURCES = [
  {g:"Официальные материалы INL", items:[
   ["Страница Sproochentest","https://www.inll.lu/en/sproochentest-en/","Формат, критерии, примеры заданий"],
-  ["MyINL — моя запись","https://myinl.inll.lu/exam/offer/sproochentest-8","Сессия 18 февраля 2027, 75 €"],
-  ["Аудио — пример Héierverstoen","https://www.inll.lu/wp-content/uploads/2022/08/sproochentest_16.mp3","Прорешать в W0, W10 и W17"],
+  ["MyINL — моя запись","https://myinl.inll.lu/exam/offer/sproochentest-8","Запись на экзамен и выбор сессии, 75 €"],
+  ["Аудио — пример Héierverstoen","https://www.inll.lu/wp-content/uploads/2022/08/sproochentest_16.mp3","Прорешать на старте, на чекпоинте второго этапа и в начале симуляций"],
   ["Бланк ответов к аудио","https://www.inll.lu/wp-content/uploads/2023/04/b1-hv-aentwertblat-2023.pdf","Печатать и решать под mp3"],
   ["Ключ к аудио","https://www.inll.lu/wp-content/uploads/2023/04/b1-hv_testbeispill_leisungen-2023.pdf","Только после решения"],
-  ["Тема «Schlof an Entspanung» (DOK-56)","https://www.inll.lu/wp-content/uploads/2026/02/DOK-56_Theema-_Schlof-an-Entspanung_DEF.pdf","Официальный образец Gespréich, неделя 11"],
-  ["Тема «Fester» (DOK-57)","https://www.inll.lu/wp-content/uploads/2026/02/DOK-57_Theema_Fester_DEF.pdf","Официальный образец Gespréich, неделя 12"],
-  ["Пример фото A2","https://www.inll.lu/wp-content/uploads/2023/04/a2-bild1-2023.pdf","Реальное изображение из Bildbeschreiwung, неделя 8"]]},
+  ["Тема «Schlof an Entspanung» (DOK-56)","https://www.inll.lu/wp-content/uploads/2026/02/DOK-56_Theema-_Schlof-an-Entspanung_DEF.pdf","Официальный образец Gespréich, тема «Сон и отдых» в плане"],
+  ["Тема «Fester» (DOK-57)","https://www.inll.lu/wp-content/uploads/2026/02/DOK-57_Theema_Fester_DEF.pdf","Официальный образец Gespréich, тема «Праздники» в плане"],
+  ["Пример фото A2","https://www.inll.lu/wp-content/uploads/2023/04/a2-bild1-2023.pdf","Реальное изображение из Bildbeschreiwung, неделя шаблона описания фото"]]},
  {g:"Каждый день", items:[
   ["LOD.lu","https://lod.lu","Словарь с озвучкой носителями и спряжением. Все новые слова — только отсюда"],
   ["RTL Lëtzebuerg","https://www.rtl.lu","Новости, подкасты, прогноз погоды, дорожная сводка"],
   ["Radio 100,7","https://www.100komma7.lu","Речь чётче и медленнее коммерческого радио"],
-  ["LLO.lu","https://llo.lu/en","Бесплатные упражнения и тест уровня (неделя 14)"]]},
+  ["LLO.lu","https://llo.lu/en","Бесплатные упражнения и тест уровня"]]},
  {g:"Живая практика", items:[
   ["Курсы INL","https://www.inll.lu/en/languages/luxembourgish/","Запись через MyINL, уровни A1.1 → B1"],
   ["Moien a.s.b.l.","https://moienasbl.lu","Курсы и разговорная практика под Sproochentest"],
@@ -868,19 +905,29 @@ function trSpan(text){
 function tr(text){return "["+text.toLowerCase().replace(/w\.e\.g\./g,"wann ech gelift").replace(/[a-zäëéèêüöyâîôû'-]+/g,w=>TR_EXC[w]?TR_EXC[w]:w.split("-").map(p=>p?trWord(p):"").join("-").replace(/^-|-$/g,"")).replace(/\s+/g," ").trim()+"]";}
 
 /* ============ STATE ============ */
+/* the key predates profiles; it stays so existing progress keeps loading */
 const KEY="sproochentest.feb2027.v1";
-/* done/known/days are sets; ts["done:"+key] is the time of the last change, so an unchecked item stays unchecked after a merge.
+/* cfg is the learner's profile (exam date, level, minutes a day, plan start, modules left out); the newer cfg.ts wins a merge.
+   done/known/days are sets; ts["done:"+key] is the time of the last change, so an unchecked item stays unchecked after a merge.
    listenBy / listenDec count +1 and −1 per device; both only grow, so changes from several devices add up. */
-let state={done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:0,sims:[]};
+let state={cfg:null,done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:0,sims:[]};
 const SETS=["done","known","days"];
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}
 const DEVICE=lsGet(KEY+".device")||(()=>{const id=Math.random().toString(36).slice(2,10);lsSet(KEY+".device",id);return id;})();
 function normalize(s){
-  s=Object.assign({done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:0,sims:[]},s||{});
+  s=Object.assign({cfg:null,done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:0,sims:[]},s||{});
   if(s.listen&&!Object.keys(s.listenBy).length)s.listenBy={[DEVICE]:s.listen};
   delete s.listen;
   s.sims=(s.sims||[]).map(x=>x.id?x:Object.assign({id:x.d+"-"+x.t+"-"+x.ok},x));
+  return ensureCfg(s);
+}
+/* Before profiles the trainer had one learner with a fixed exam date. Progress without a profile is theirs,
+   so it gets that plan back; ts 1 lets any profile saved later win the merge. */
+const LEGACY_CFG={exam:"2027-02-18",level:"zero",mins:30,start:"2026-10-02",skip:[],ts:1};
+function ensureCfg(s){
+  const used=Object.keys(s.done).length||Object.keys(s.known).length||Object.keys(s.days).length||s.sims.length;
+  if(!s.cfg&&used)s.cfg=Object.assign({},LEGACY_CFG);
   return s;
 }
 function localLoad(){try{const r=lsGet(KEY);if(r)state=normalize(JSON.parse(r));}catch(e){}}
@@ -889,7 +936,7 @@ function setFlag(f,k,on){if(on)state[f][k]=1;else delete state[f][k];state.ts[f+
 const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
 function listenTotal(){return Math.max(0,sum(state.listenBy)-sum(state.listenDec));}
 function mergeState(a,b){
-  const o={done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:Math.max(a.quizBest||0,b.quizBest||0),sims:[]};
+  const o={cfg:(a.cfg&&a.cfg.ts||0)>=(b.cfg&&b.cfg.ts||0)?a.cfg:b.cfg,done:{},known:{},days:{},ts:{},listenBy:{},listenDec:{},quizBest:Math.max(a.quizBest||0,b.quizBest||0),sims:[]};
   SETS.forEach(f=>{
     const ids=new Set();
     [a,b].forEach(s=>{Object.keys(s[f]).forEach(k=>ids.add(k));Object.keys(s.ts).forEach(id=>{if(id.startsWith(f+":"))ids.add(id.slice(f.length+1));});});
@@ -913,51 +960,143 @@ const $=s=>document.querySelector(s);
 const MONTHS=["янв","фев","мар","апр","мая","июн","июл","авг","сен","окт","ноя","дек"];
 const MONTHS_FULL=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const WD=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
-function d(a){return new Date(a[0],a[1],a[2]);}
 function fmt(dt){return dt.getDate()+" "+MONTHS[dt.getMonth()];}
+function fmtLong(dt){return WD[dt.getDay()]+", "+dt.getDate()+" "+MONTHS_FULL[dt.getMonth()]+" "+dt.getFullYear();}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function iso(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function parseISO(s){const [y,m,dd]=s.split("-").map(Number);return new Date(y,m-1,dd);}
 function today(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
-WEEKS.forEach(w=>{w.start=d(w.s); w.end=w.e?d(w.e):new Date(w.start.getTime()+6*DAY);});
-function weekOf(dt){
-  if(dt<WEEKS[0].start)return 0;
-  for(const w of WEEKS){if(dt>=w.start&&dt<=w.end)return w.n;}
-  return 20;
-}
+function addDays(dt,n){const x=new Date(dt);x.setDate(x.getDate()+n);return x;}
+function monday(dt){return addDays(dt,-((dt.getDay()+6)%7));}
+function daysBetween(a,b){return Math.round((b-a)/DAY);}
 function phaseOf(n){return PHASES.find(p=>p.weeks.includes(n));}
 function plural(n,a,b,c){const m=n%10,h=n%100;if(h>=11&&h<=14)return c;if(m===1)return a;if(m>=2&&m<=4)return b;return c;}
 function topicByKey(k){return TOPICS.find(t=>t.k===k);}
-
 const NOW=today();
-const CUR=weekOf(NOW);
-const DAYS_LEFT=Math.round((EXAM_DATE-NOW)/DAY);
+
+/* ============ SCHEDULE ============ */
+/* The profile decides which modules are in the plan and how they land on calendar weeks
+   (the start week runs from the start day to Sunday, then Monday–Sunday, the last week ends on the exam day):
+   full — a module a week, spare weeks become review weeks spread between the middle modules;
+   compressed (8+ weeks) — middle modules share weeks; start, simulation and exam weeks stay whole;
+   express (under 8 weeks) — only the core middle modules and fewer simulation weeks;
+   pace — no exam date: modules follow one another and the current one is the first unfinished. */
+const LEVELS=[["zero","С нуля","Начинаю с приветствий, чисел и первых слов"],["a1","Знаю основы","sinn и hunn, настоящее время, числа уже есть"],["a2","Почти готов(а)","Perfekt и придаточные знаю, нужны темы экзамена и практика"]];
+const LEVEL_SKIP={zero:[],a1:[1,2,3],a2:[1,2,3,4,5,6,7,8,9,10]};
+const EXPRESS_MID=[1,5,7,8,11,12,14,16];
+const MINS=[15,30,60];
+const ROUTINE={15:[4,3,6,2],30:[8,7,12,3],60:[15,15,22,8]};
+const MODE_NAME={full:"полный план",compressed:"сжатый план",express:"экспресс-план",pace:"свой темп"};
+const REVIEW={t:"Повторение",g:"Правила прошлых недель: таблицы и типичные ошибки",topic:"all",tt:"Темы прошлых недель",
+  l:"Обычный объём аудио, без новых разборов: переслушать уже разобранное.",
+  tasks:["Карточки всех пройденных тем — до звёздочек","Квиз по грамматике, разобрать каждую ошибку","Симулятор: 2 прогона на темы прошлых недель","Описать 3 фото по шаблону"]};
+let CFG,SCHED,CUR,CURMODS,CURMOD,MOD_SLOT,EXAM,DAYS_LEFT,WEEK_TOPIC;
+
+function planMods(cfg){
+  const skip=new Set([...(LEVEL_SKIP[cfg.level]||[]),...(cfg.skip||[])]);
+  return MODS.map(m=>m.n).filter(n=>!skip.has(n));
+}
+/* k consecutive groups whose sizes differ by at most one; a group left empty becomes a review week */
+function spread(items,k){
+  const out=[];let i=0;
+  for(let j=0;j<k;j++){const n=Math.ceil((items.length-i)/(k-j));out.push(n?items.slice(i,i+n):"R");i+=n;}
+  return out;
+}
+function buildSchedule(cfg){
+  const act=planMods(cfg);
+  if(!cfg.exam)return {mode:"pace",slots:act.map((n,i)=>({i,mods:[n],review:false}))};
+  const S=parseISO(cfg.start),E0=parseISO(cfg.exam),E=E0<S?S:E0,bounds=[];
+  for(let a=S;;){const end=addDays(monday(a),6);if(end>=E){bounds.push([a,E]);break;}bounds.push([a,end]);a=addDays(end,1);}
+  const K=bounds.length,R="R";
+  const head=act.filter(n=>n===0).map(n=>[n]),last=act.filter(n=>n===20).map(n=>[n]);
+  const mid=act.filter(n=>n>=1&&n<=16),tail=act.filter(n=>n>=17&&n<=19),fixed=head.length+last.length;
+  let mode,groups;
+  if(K>=fixed+mid.length+tail.length){
+    mode="full";
+    const extra=K-fixed-mid.length-tail.length,body=[];
+    if(!mid.length)for(let r=0;r<extra;r++)body.push(R);
+    mid.forEach((n,i)=>{body.push([n]);const r=Math.floor((i+1)*extra/mid.length)-Math.floor(i*extra/mid.length);for(let j=0;j<r;j++)body.push(R);});
+    groups=[...head,...body,...tail.map(n=>[n]),...last];
+  }else if(K>=8){
+    mode="compressed";
+    groups=[...head,...spread(mid,K-fixed-tail.length),...tail.map(n=>[n]),...last];
+  }else{
+    mode="express";
+    if(K===1)groups=[last[0]||R];
+    else{
+      const tc=Math.max(0,Math.min(3,Math.floor((K-fixed)/2)));
+      const t=tc>=tail.length?tail:tc===2?[tail[0],tail[tail.length-1]]:tc===1?[tail[tail.length-1]]:[];
+      groups=[...head,...spread(mid.filter(n=>EXPRESS_MID.includes(n)),K-fixed-t.length),...t.map(n=>[n]),...last];
+    }
+  }
+  return {mode,slots:groups.map((g,i)=>({i,start:bounds[i][0],end:bounds[i][1],mods:g===R?[]:g,review:g===R}))};
+}
+function slotKeys(sl){
+  return sl.review?REVIEW.tasks.map((_,ti)=>"rv"+iso(sl.start)+"-"+ti):sl.mods.flatMap(n=>MODS[n].tasks.map((_,ti)=>"w"+n+"-"+ti));
+}
+function slotDone(sl){const k=slotKeys(sl);return k.length>0&&k.every(x=>state.done[x]);}
+/* the module that stands for a week: its first one, or for a review week the last module before it */
+function slotMod(sl){
+  if(sl.mods.length)return sl.mods[0];
+  for(let i=sl.i-1;i>=0;i--){const m=SCHED.slots[i].mods;if(m.length)return m[m.length-1];}
+  return 0;
+}
+function slotPhase(sl){return phaseOf(slotMod(sl));}
+function slotTitle(sl){return sl.review?REVIEW.t:sl.mods.map(n=>MODS[n].t).join(" + ");}
+function slotDates(sl){return sl.start?fmt(sl.start)+" – "+fmt(sl.end):"";}
+function currentSlot(){
+  const sl=SCHED.slots;
+  if(SCHED.mode==="pace"){const i=sl.findIndex(x=>!slotDone(x));return i<0?sl.length-1:i;}
+  if(NOW<sl[0].start)return 0;
+  const i=sl.findIndex(x=>NOW>=x.start&&NOW<=x.end);
+  return i<0?sl.length-1:i;
+}
+function initPlan(){
+  CFG=state.cfg||{exam:"",level:"zero",mins:30,start:iso(NOW),skip:[]};
+  SCHED=buildSchedule(CFG);
+  CUR=currentSlot();
+  const sl=SCHED.slots[CUR];CURMODS=sl.mods;CURMOD=slotMod(sl);
+  MOD_SLOT={};SCHED.slots.forEach(x=>x.mods.forEach(n=>{MOD_SLOT[n]=x.i;}));
+  EXAM=CFG.exam?parseISO(CFG.exam):null;
+  DAYS_LEFT=EXAM?daysBetween(NOW,EXAM):null;
+  WEEK_TOPIC=[...CURMODS,CURMOD].map(n=>MODS[n].topic).find(t=>t!=="all")||null;
+  curTopic=WEEK_TOPIC||"iwwer";
+  curGram=(GRAMS.find(g=>g.wk.some(n=>CURMODS.includes(n)))||GRAMS.find(g=>g.wk.includes(CURMOD))||GRAMS[0]).k;
+}
+function phaseSlots(ph){return SCHED.slots.filter(x=>slotPhase(x)===ph);}
+function phaseRange(ph){
+  const sl=phaseSlots(ph);if(!sl.length)return "";
+  const wk=sl[0].i===sl[sl.length-1].i?"неделя "+sl[0].i:"недели "+sl[0].i+"–"+sl[sl.length-1].i;
+  return EXAM?fmt(sl[0].start)+" – "+fmt(sl[sl.length-1].end)+" · "+wk:wk;
+}
 
 /* ============ HERO ============ */
 function buildHero(){
-  if(DAYS_LEFT>0){$("#days").textContent=DAYS_LEFT;$("#dayslbl").textContent=plural(DAYS_LEFT,"день до экзамена","дня до экзамена","дней до экзамена");}
+  const n=SCHED.slots.length;
+  if(!EXAM){const d=SCHED.slots.filter(slotDone).length;$("#days").textContent=d;$("#dayslbl").textContent="из "+n+" "+plural(n,"недели","недель","недель")+" плана пройдено";}
+  else if(DAYS_LEFT>0){$("#days").textContent=DAYS_LEFT;$("#dayslbl").textContent=plural(DAYS_LEFT,"день до экзамена","дня до экзамена","дней до экзамена");}
   else if(DAYS_LEFT===0){$("#days").textContent="Сегодня";$("#dayslbl").textContent="экзамен. Говори просто, не молчи.";}
   else{$("#days").textContent="✓";$("#dayslbl").textContent="экзамен позади";}
-  $("#weeklbl").textContent="неделя "+CUR+" из 20";
-  const strip=$("#strip");
-  WEEKS.forEach(w=>{
+  $("#examwhen").textContent=EXAM?cap(fmtLong(EXAM)):"Дата экзамена не выбрана";
+  $("#weeklbl").textContent=EXAM?"неделя "+CUR+" из "+(n-1)+" · "+MODE_NAME[SCHED.mode]:MODE_NAME.pace;
+  $("#cfgopen").addEventListener("click",()=>openSetup(false));
+  const strip=$("#strip");strip.style.setProperty("--n",n);strip.classList.toggle("dense",n>30);
+  SCHED.slots.forEach(sl=>{
     const b=document.createElement("button");b.type="button";b.setAttribute("role","listitem");
-    const ph=phaseOf(w.n);b.style.setProperty("--seg",ph.color);
-    b.className=(w.n<CUR?"past ":"")+(w.n===CUR?"now ":"");
-    b.title="Неделя "+w.n+": "+fmt(w.start)+" – "+fmt(w.end)+" — "+w.t;
+    b.style.setProperty("--seg",slotPhase(sl).color);
+    b.className=(sl.i<CUR?"past ":"")+(sl.i===CUR?"now ":"");
+    b.title="Неделя "+sl.i+(sl.start?": "+slotDates(sl):"")+" — "+slotTitle(sl);
     b.setAttribute("aria-label",b.title);
-    b.innerHTML="<span>"+w.n+"</span>";
-    b.addEventListener("click",()=>{select("plan");const det=document.getElementById("week-"+w.n);document.querySelectorAll("details.week").forEach(x=>x.open=false);det.open=true;det.scrollIntoView({behavior:"smooth",block:"start"});});
+    b.innerHTML="<span>"+sl.i+"</span>";
+    b.addEventListener("click",()=>{select("plan");const det=document.getElementById("slot-"+sl.i);document.querySelectorAll("details.week").forEach(x=>x.open=false);det.open=true;det.scrollIntoView({behavior:"smooth",block:"start"});});
     strip.appendChild(b);
   });
   const lg=$("#legend");
-  PHASES.forEach(p=>{const s=document.createElement("span");s.innerHTML="<i style='background:"+p.color+"'></i>"+p.name+" · "+p.range;lg.appendChild(s);});
+  PHASES.forEach(p=>{const r=phaseRange(p);if(!r)return;const s=document.createElement("span");s.innerHTML="<i style='background:"+p.color+"'></i>";s.appendChild(document.createTextNode(p.name+" · "+r));lg.appendChild(s);});
   const s=document.createElement("span");s.innerHTML="<i style='background:var(--sun)'></i>текущая неделя";lg.appendChild(s);
 }
 function paintStrip(){
-  WEEKS.forEach((w,i)=>{
-    const b=$("#strip").children[i];
-    const all=w.tasks.length,done=w.tasks.filter((_,ti)=>state.done["w"+w.n+"-"+ti]).length;
-    b.classList.toggle("done",all>0&&done===all);
-  });
+  SCHED.slots.forEach((sl,i)=>{$("#strip").children[i].classList.toggle("done",slotDone(sl));});
 }
 
 /* ============ TABS ============ */
@@ -986,74 +1125,123 @@ function syncChecks(){refreshRtl();document.querySelectorAll(".chk[data-key]").f
 
 /* ============ TODAY ============ */
 function focusBlock(w){
-  const ph=phaseOf(w.n);
   const t=w.topic==="all"?null:topicByKey(w.topic);
   const f=document.createElement("div");f.className="focus";
-  const gs=GRAMS.find(g=>g.wk.includes(w.n));
+  const gs=w.n==null?null:GRAMS.find(g=>g.wk.includes(w.n));
   f.innerHTML='<div><b>Грамматика</b>'+esc(w.g)+(gs?' <button class="link" data-g="'+gs.k+'">разобрать →</button>':'')+'</div>'
-   +'<div><b>Тема недели</b>'+(t?'<button class="link" data-t="'+t.k+'">'+esc(t.lb)+'</button> <span class="muted">'+esc(t.ru)+'</span>':'Все 18 тем — симуляции')+'</div>'
+   +'<div><b>Тема недели</b>'+(t?'<button class="link" data-t="'+t.k+'">'+esc(t.lb)+'</button> <span class="muted">'+esc(t.ru)+'</span>':esc(w.tt||"Все 18 тем — симуляции"))+'</div>'
    +'<div><b>Аудирование</b>'+esc(w.l)+'</div>';
   f.querySelectorAll("button[data-t]").forEach(b=>b.addEventListener("click",()=>{select("topics");showTopic(b.dataset.t);}));
   f.querySelectorAll("button[data-g]").forEach(b=>b.addEventListener("click",()=>{select("gram");showGram(b.dataset.g);}));
   return f;
 }
 function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function taskList(tasks,keyOf){
+  const ul=document.createElement("ul");ul.className="tasks";
+  tasks.forEach((t,ti)=>{const li=document.createElement("li");li.appendChild(chk(keyOf(ti),t));ul.appendChild(li);});
+  return ul;
+}
+/* focus, tasks and RTL lessons of one module; with a title when a week holds several */
+function moduleBlock(n,withTitle){
+  const w=MODS[n],d=document.createElement("div");d.className="mod";
+  if(withTitle){const h=document.createElement("h3");h.textContent=w.t;d.appendChild(h);}
+  d.appendChild(focusBlock(w));
+  if(!withTitle){const h=document.createElement("h3");h.textContent="Задачи недели";d.appendChild(h);}
+  d.appendChild(taskList(w.tasks,ti=>"w"+n+"-"+ti));
+  const rb=rtlWeekBlock(n);if(rb)d.appendChild(rb);
+  return d;
+}
+function slotBody(sl){
+  const d=document.createElement("div");
+  if(sl.review){
+    const m=document.createElement("div");m.className="mod";
+    m.appendChild(focusBlock(REVIEW));
+    const h=document.createElement("h3");h.textContent="Задачи недели";m.appendChild(h);
+    m.appendChild(taskList(REVIEW.tasks,ti=>"rv"+iso(sl.start)+"-"+ti));
+    d.appendChild(m);
+  }else sl.mods.forEach(n=>d.appendChild(moduleBlock(n,sl.mods.length>1)));
+  return d;
+}
 function buildToday(){
-  const w=WEEKS[CUR],ph=phaseOf(CUR);
-  $("#today-date").textContent=WD[NOW.getDay()]+", "+NOW.getDate()+" "+MONTHS_FULL[NOW.getMonth()]+" "+NOW.getFullYear()+" · неделя "+CUR+" · "+ph.name;
-  $("#today-title").textContent=w.t;
-  const fb=focusBlock(w);fb.id="today-focus";$("#today-focus").replaceWith(fb);
-  const ul=$("#today-tasks");ul.innerHTML="";
-  w.tasks.forEach((t,ti)=>{const li=document.createElement("li");li.appendChild(chk("w"+CUR+"-"+ti,t));ul.appendChild(li);});
-  const tr_=$("#today-rtl");tr_.innerHTML="";const rb=rtlWeekBlock(CUR);if(rb)tr_.appendChild(rb);
-  // days grid
+  const sl=SCHED.slots[CUR],ph=slotPhase(sl);
+  $("#today-date").textContent=cap(fmtLong(NOW))+" · неделя "+CUR+" · "+ph.name;
+  $("#today-title").textContent=slotTitle(sl);
+  const body=$("#today-body");body.innerHTML="";
+  if(sl.mods.length>1){const p=document.createElement("p");p.className="note";p.textContent="Сжатый план: на этой неделе "+sl.mods.length+" "+plural(sl.mods.length,"тема","темы","тем")+" плана. Иди по порядку, задачи внутри — в любом.";body.appendChild(p);}
+  body.appendChild(slotBody(sl));
+  if(SCHED.mode==="pace"&&CUR<SCHED.slots.length-1){
+    const b=document.createElement("button");b.className="btn";b.style.marginTop="12px";b.textContent="Неделя пройдена — дальше →";
+    b.addEventListener("click",()=>{slotKeys(sl).forEach(k=>{if(!state.done[k])setFlag("done",k,true);});saveAndReload();});
+    body.appendChild(b);
+  }
+  $("#routine-h").textContent=CFG.mins+" минут в день, в этом порядке";
+  document.querySelectorAll(".routine .min").forEach((el,i)=>{el.firstChild.textContent=ROUTINE[CFG.mins][i];});
+  // days grid: from the plan start to the exam, or two weeks ahead when there is no exam date
   const grid=$("#daygrid");grid.innerHTML="";
-  const start=WEEKS[0].start,total=Math.round((EXAM_DATE-start)/DAY)+1;$("#daystotal").textContent=total;
-  for(let i=0;i<total;i++){const dt=new Date(start.getTime()+i*DAY);const k=iso(dt);const el=document.createElement("i");el.className=(state.days[k]?"on ":"")+(k===iso(NOW)?"today":"");el.title=fmt(dt);grid.appendChild(el);}
+  const start=SCHED.slots[0].start||parseISO(CFG.start);
+  const end=EXAM||addDays(monday(NOW<start?start:NOW),13);
+  const total=Math.max(1,daysBetween(start,end)+1);$("#daystotal").textContent=EXAM?" из "+total:"";
+  for(let i=0;i<total;i++){const dt=addDays(start,i);const k=iso(dt);const el=document.createElement("i");el.className=(state.days[k]?"on ":"")+(k===iso(NOW)?"today":"");el.title=fmt(dt);grid.appendChild(el);}
   const mk=$("#markday");
   const k=iso(NOW);
-  mk.textContent=state.days[k]?"Сегодня отмечено ✓":"Сегодня занимался";
+  mk.textContent=state.days[k]?"Сегодня отмечено ✓":"Отметить занятие сегодня";
   mk.onclick=()=>{setFlag("days",k,!state.days[k]);persist();buildToday();};
   // streak
-  let s=0;for(let i=0;;i++){const dt=new Date(NOW.getTime()-i*DAY);if(state.days[iso(dt)])s++;else if(i===0)continue;else break;if(dt<start)break;}
+  let s=0;for(let i=0;;i++){const dt=addDays(NOW,-i);if(state.days[iso(dt)])s++;else if(i===0)continue;else break;if(dt<start)break;}
   $("#streak").textContent=s;$("#daysdone").textContent=Object.keys(state.days).length;
 }
 
 /* ============ PLAN ============ */
 function updateWeekPct(det){
-  const n=+det.dataset.n,w=WEEKS[n];const done=w.tasks.filter((_,ti)=>state.done["w"+n+"-"+ti]).length;
-  det.querySelector(".wp").textContent=done+" / "+w.tasks.length;
+  const k=det._keys;det.querySelector(".wp").textContent=k.filter(x=>state.done[x]).length+" / "+k.length;
+}
+function planLead(){
+  const n=SCHED.slots.length,w=n+" "+plural(n,"неделю","недели","недель"),m=" По "+CFG.mins+" минут в день.";
+  const lead={
+    full:"План на "+w+" до экзамена, понедельник–воскресенье."+m+(SCHED.slots.some(x=>x.review)?" Недель больше, чем тем, поэтому между ними стоят недели повторения.":""),
+    compressed:"До экзамена "+n+" "+plural(n,"неделя","недели","недель")+": это меньше полного плана, поэтому он сжат — в части недель по несколько тем. Старт, симуляции и неделя экзамена остаются отдельными."+m,
+    express:"До экзамена меньше восьми недель — экспресс-план: ключевая грамматика, темы экзамена, описание фото и симуляции."+m,
+    pace:"Свой темп: недели идут одна за другой без дат. Закончил(а) неделю — нажми «Неделя пройдена» на вкладке «Сегодня». Когда появится дата экзамена, укажи её в настройках, и план разложится по календарю."
+  }[SCHED.mode];
+  const lv=LEVELS.find(l=>l[0]===CFG.level);
+  const skip=MODS.some(x=>MOD_SLOT[x.n]==null)?" Недели, которые не вошли в план"+(LEVEL_SKIP[CFG.level].length?" (уровень «"+lv[1]+"»)":"")+", — внизу страницы.":"";
+  return lead+skip+" Отмечай пункты — прогресс сохраняется.";
+}
+function weekDetails(id,num,title,dates,color,keys,body,open){
+  const det=document.createElement("details");det.className="week"+(open?" now":"");det.id=id;det.style.setProperty("--pc",color);det.open=open;
+  det.innerHTML='<summary><div class="wn"></div><div><div class="wt"></div><div class="wd"></div></div><div class="wp"></div></summary><div class="body"></div>';
+  det.querySelector(".wn").textContent=num;det.querySelector(".wt").textContent=title;det.querySelector(".wd").textContent=dates;
+  det.querySelector(".body").appendChild(body);det._keys=keys;updateWeekPct(det);
+  return det;
+}
+function phaseHeader(host,ph,range,goal){
+  const h=document.createElement("div");h.className="phase-h";h.style.setProperty("--pc",ph?ph.color:"var(--muted)");
+  h.innerHTML="<h2></h2><span class='rng'></span>";h.querySelector("h2").textContent=ph?ph.name:"Не вошло в план";h.querySelector(".rng").textContent=range;
+  host.appendChild(h);
+  const g=document.createElement("p");g.className="phase-goal";g.textContent=goal;host.appendChild(g);
 }
 function buildPlan(){
+  $("#planlead").textContent=planLead();
   const host=$("#planhost");host.innerHTML="";
-  PHASES.forEach(ph=>{
-    const h=document.createElement("div");h.className="phase-h";h.style.setProperty("--pc",ph.color);
-    h.innerHTML="<h2></h2><span class='rng'></span>";h.querySelector("h2").textContent=ph.name;h.querySelector(".rng").textContent=ph.range+" · недели "+ph.weeks[0]+"–"+ph.weeks[ph.weeks.length-1];
-    host.appendChild(h);
-    const g=document.createElement("p");g.className="phase-goal";g.textContent=ph.goal;host.appendChild(g);
-    ph.weeks.forEach(n=>{
-      const w=WEEKS[n];
-      const det=document.createElement("details");det.className="week"+(n===CUR?" now":"");det.id="week-"+n;det.dataset.n=n;det.style.setProperty("--pc",ph.color);
-      if(n===CUR)det.open=true;
-      det.innerHTML='<summary><div class="wn">'+n+'</div><div><div class="wt"></div><div class="wd"></div></div><div class="wp"></div></summary><div class="body"></div>';
-      det.querySelector(".wt").textContent=w.t;
-      det.querySelector(".wd").textContent=fmt(w.start)+" – "+fmt(w.end)+(n===0?" · пятница–воскресенье":n===20?" · экзамен в четверг":"");
-      const body=det.querySelector(".body");
-      body.appendChild(focusBlock(w));
-      const ul=document.createElement("ul");ul.className="tasks";
-      w.tasks.forEach((t,ti)=>{const li=document.createElement("li");li.appendChild(chk("w"+n+"-"+ti,t));ul.appendChild(li);});
-      body.appendChild(ul);
-      const rb=rtlWeekBlock(n);if(rb)body.appendChild(rb);
-      host.appendChild(det);updateWeekPct(det);
-    });
+  let last=null;
+  SCHED.slots.forEach(sl=>{
+    const ph=slotPhase(sl);
+    if(ph!==last){last=ph;phaseHeader(host,ph,phaseRange(ph),ph.goal);}
+    const dates=sl.start?slotDates(sl)+(sl.i===SCHED.slots.length-1&&EXAM?" · экзамен "+fmt(EXAM):""):"";
+    host.appendChild(weekDetails("slot-"+sl.i,sl.i,slotTitle(sl),dates,ph.color,slotKeys(sl),slotBody(sl),sl.i===CUR));
   });
+  const out=MODS.filter(m=>MOD_SLOT[m.n]==null);
+  if(out.length){
+    phaseHeader(host,null,"","Эти недели пропущены — по уровню или потому что уже пройдены. Открой любую, если захочешь повторить.");
+    out.forEach(m=>host.appendChild(weekDetails("mod-"+m.n,"—",m.t,"",phaseOf(m.n).color,m.tasks.map((_,ti)=>"w"+m.n+"-"+ti),moduleBlock(m.n,false),false)));
+  }
   $("#openall").addEventListener("click",e=>{const all=[...document.querySelectorAll("details.week")];const open=all.some(x=>!x.open);all.forEach(x=>x.open=open);e.currentTarget.textContent=open?"Свернуть все недели":"Развернуть все недели";});
   $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;Object.keys(state.done).filter(k=>!k.startsWith("rtl-")).forEach(k=>setFlag("done",k,false));persist();syncChecks();buildToday();});
   $("#togram").addEventListener("click",()=>select("gram"));
 }
 
 /* ============ TOPICS ============ */
-let curTopic=WEEKS[CUR].topic==="all"?"iwwer":WEEKS[CUR].topic;
+let curTopic="iwwer";
 function rows(arr,withStar,prefix,withTr){
   return arr.map((p,i)=>{
     const key=prefix?prefix+"-"+i:null;
@@ -1079,7 +1267,7 @@ function buildTopics(){
 function showTopic(k){
   curTopic=k;const t=topicByKey(k);
   document.querySelectorAll("#topicchips .chip").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===k)));
-  const wk=WEEKS.filter(w=>w.topic===k).map(w=>w.n);
+  const wk=[...new Set(MODS.filter(w=>w.topic===k).map(w=>MOD_SLOT[w.n]).filter(x=>x!=null))].sort((a,b)=>a-b);
   const c=$("#topiccard");
   c.innerHTML='<div class="row" style="justify-content:space-between"><h2>'+esc(t.lb)+' <span class="muted" style="font-weight:500;font-size:18px">'+esc(t.ru)+'</span></h2>'+(wk.length?'<span class="pill">неделя '+wk.join(", ")+'</span>':'')+'</div>'
    +'<h3 style="margin-top:14px">Что спросит экзаменатор</h3><div>'+rows(t.q,false,null,true)+'</div>'
@@ -1089,7 +1277,7 @@ function showTopic(k){
 }
 
 /* ============ GRAMMAR ============ */
-let curGram=(GRAMS.find(g=>g.wk.includes(CUR))||GRAMS[0]).k;
+let curGram=GRAMS[0].k;
 function buildGram(){
   const ch=$("#gramchips");
   GRAMS.forEach(g=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=g.lb;b.dataset.k=g.k;b.addEventListener("click",()=>showGram(g.k));ch.appendChild(b);});
@@ -1155,10 +1343,10 @@ VOCAB.forEach((v,vi)=>v.w.forEach((p,i)=>ALL.push({g:"Слова: "+v.t,lb:p[0],
 const GROUPS=[...new Set(ALL.map(c=>c.g))];
 let active=new Set(),deck=[],idx=0,flipped=false,reverse=false;
 function defaultGroups(){
-  const w=WEEKS[CUR];const t=w.topic!=="all"?topicByKey(w.topic):null;
+  const t=WEEK_TOPIC?topicByKey(WEEK_TOPIC):null;
   const s=new Set();if(t)s.add("Фразы: "+t.lb);s.add("Фразы-спасатели");
-  if(CUR<=4){s.add("Слова: Знакомство");s.add("Слова: Семья");s.add("Слова: Числа и дни");}
-  if(CUR>=16){GROUPS.forEach(g=>{if(g.startsWith("Фразы"))s.add(g);});}
+  if(CURMOD<=4){s.add("Слова: Знакомство");s.add("Слова: Семья");s.add("Слова: Числа и дни");}
+  if(CURMOD>=16){GROUPS.forEach(g=>{if(g.startsWith("Фразы"))s.add(g);});}
   if(!s.size)GROUPS.forEach(g=>s.add(g));return s;
 }
 function buildCards(){
@@ -1197,7 +1385,7 @@ function next(){if(!deck.length)return;idx=(idx+1)%deck.length;flipped=false;ren
 function prev(){if(!deck.length)return;idx=(idx-1+deck.length)%deck.length;flipped=false;render();}
 
 /* ---- simulator ---- */
-const CRITERIA=["Запас слов","Беглость","Чёткость","Грамматика","Связность","Понятность","Диалог: переспросил, задал встречный вопрос"];
+const CRITERIA=["Запас слов","Беглость","Чёткость","Грамматика","Связность","Понятность","Диалог: переспросить, задать встречный вопрос"];
 let sim={stage:0,topic:null,qi:0};
 function buildSim(){
   $("#crit").innerHTML=CRITERIA.map(c=>'<button type="button" aria-pressed="false">'+esc(c)+'</button>').join("");
@@ -1275,7 +1463,7 @@ function buildQuiz(){
 }
 
 /* ============ LISTEN ============ */
-function listenGoal(){const ph=phaseOf(CUR).id;return {p1:1,p2:3,p3:3,p4:5}[ph];}
+function listenGoal(){const ph=phaseOf(CURMOD).id;return {p1:1,p2:3,p3:3,p4:5}[ph];}
 function buildListen(){
   $("#listengoal").textContent=listenGoal()+" в неделю";
   $("#listenadd").addEventListener("click",()=>{state.listenBy[DEVICE]=(state.listenBy[DEVICE]||0)+1;persist();});
@@ -1352,7 +1540,7 @@ const RTL_ALL=[
 RTL_ALL.forEach(x=>{x.key="rtl-"+x.id;x.wk=RTL_PLAN[x.id];});
 const RTL_ORDER={l:0,b:1,e:2,o:3};
 function rtlOfWeek(n){return RTL_ALL.filter(x=>x.wk===n).sort((a,b)=>RTL_ORDER[a.id[0]]-RTL_ORDER[b.id[0]]);}
-function rtlMeta(x,withWeek){return [x.a?"аудио":"",withWeek&&x.wk!=null?"неделя "+x.wk:"",x.d].filter(Boolean).join(" · ");}
+function rtlMeta(x,withWeek){return [x.a?"аудио":"",withWeek&&x.wk!=null?(MOD_SLOT[x.wk]!=null?"неделя "+MOD_SLOT[x.wk]:"вне плана"):"",x.d].filter(Boolean).join(" · ");}
 function rtlList(items,label,withWeek){
   const ul=document.createElement("ul");ul.className="rtl";
   items.forEach(x=>ul.appendChild(rtlItem(x.key,label?x.lb:x.n,x.u,x.ru,x.en,rtlMeta(x,withWeek))));
@@ -1381,11 +1569,14 @@ function rtlItem(key,n,url,ru,en,meta){
 function buildRtl(){
   // view by plan weeks
   const host=$("#rtl-weeks");
-  WEEKS.forEach(w=>{
-    const items=rtlOfWeek(w.n);if(!items.length)return;
-    const ph=phaseOf(w.n),h=document.createElement("div");h.className="rtl-wk";h.style.setProperty("--pc",ph.color);
-    h.innerHTML='<h3></h3><span class="muted"></span>'+(w.n===CUR?'<span class="pill">сейчас</span>':'');
-    h.querySelector("h3").textContent="Неделя "+w.n+" · "+w.t;h.querySelector(".muted").textContent=fmt(w.start)+" – "+fmt(w.end);
+  const groups=SCHED.slots.map(sl=>({sl,items:sl.mods.flatMap(rtlOfWeek)}));
+  const out=MODS.filter(m=>MOD_SLOT[m.n]==null).flatMap(m=>rtlOfWeek(m.n));
+  if(out.length)groups.push({sl:null,items:out});
+  groups.forEach(({sl,items})=>{
+    if(!items.length)return;
+    const h=document.createElement("div");h.className="rtl-wk";h.style.setProperty("--pc",sl?slotPhase(sl).color:"var(--muted)");
+    h.innerHTML='<h3></h3><span class="muted"></span>'+(sl&&sl.i===CUR?'<span class="pill">сейчас</span>':'');
+    h.querySelector("h3").textContent=sl?"Неделя "+sl.i+" · "+slotTitle(sl):"Не вошло в план";h.querySelector(".muted").textContent=sl?slotDates(sl):"";
     host.appendChild(h);
     const c=document.createElement("div");c.className="card";c.appendChild(rtlList(items,true,false));host.appendChild(c);
   });
@@ -1422,9 +1613,8 @@ function buildRes(){
 
 /* ============ STATS ============ */
 function refreshStats(){
-  const total=WEEKS.reduce((s,w)=>s+w.tasks.length,0);
-  const done=Object.keys(state.done).filter(k=>k.startsWith("w")).length;
-  const pct=Math.round(done/total*100);
+  const keys=SCHED.slots.flatMap(slotKeys);
+  const pct=keys.length?Math.round(keys.filter(k=>state.done[k]).length/keys.length*100):0;
   $("#pct").textContent=pct+"%";
   const C=2*Math.PI*26;const fg=$("#ringfg");fg.style.strokeDasharray=C;fg.style.strokeDashoffset=C*(1-pct/100);
   $("#knownN").textContent=Object.keys(state.known).length;refreshRtl();
@@ -1434,7 +1624,80 @@ function refreshStats(){
 
 /* ============ BOOT ============ */
 localLoad();
+initPlan();
 buildHero();buildTabs();buildToday();buildPlan();buildTopics();buildPhoto();buildGram();buildTrain();buildListen();buildRtl();buildRes();
+if(EXAM){
+  $("#examdayh").textContent=", "+EXAM.getDate()+" "+MONTHS_FULL[EXAM.getMonth()];
+  const by=addDays(EXAM,-15);$("#letterby").textContent=", то есть до "+by.getDate()+" "+MONTHS_FULL[by.getMonth()];
+}
+
+/* ============ SETUP ============ */
+/* First visit: three questions build the profile. Later the same form edits it from «Настройки». */
+let setupLevel,setupMins;
+function buildSetup(){
+  const lv=$("#cfg-level");
+  LEVELS.forEach(([k,l,d])=>{
+    const b=document.createElement("button");b.type="button";b.className="opt";b.setAttribute("role","radio");b.dataset.k=k;
+    b.innerHTML="<b></b><span></span>";b.querySelector("b").textContent=l;b.querySelector("span").textContent=d;
+    b.addEventListener("click",()=>{setupLevel=k;paintSetup();});lv.appendChild(b);
+  });
+  const mn=$("#cfg-mins");
+  MINS.forEach(m=>{const b=document.createElement("button");b.type="button";b.className="chip";b.setAttribute("role","radio");b.dataset.m=m;b.textContent=m+" минут";b.addEventListener("click",()=>{setupMins=m;paintSetup();});mn.appendChild(b);});
+  $("#cfg-noexam").addEventListener("change",e=>{$("#cfg-exam").disabled=e.target.checked;});
+  $("#cfg-cancel").addEventListener("click",closeSetup);
+  $("#setupform").addEventListener("submit",e=>{
+    e.preventDefault();
+    const err=$("#cfg-err"),no=$("#cfg-noexam").checked,v=$("#cfg-exam").value;
+    if(!no&&!v){err.textContent="Укажи дату экзамена или отметь, что даты пока нет.";return;}
+    if(!no&&parseISO(v)<NOW){err.textContent="Эта дата уже прошла.";return;}
+    const old=state.cfg,restart=!old||$("#cfg-restart").checked;
+    const c={exam:no?"":v,level:setupLevel,mins:setupMins,start:restart?iso(NOW):old.start,skip:old&&!restart?old.skip||[]:[],ts:Date.now()};
+    // starting over keeps finished weeks finished: they leave the plan instead of coming back
+    if(old&&restart)c.skip=MODS.filter(m=>m.tasks.every((_,ti)=>state.done["w"+m.n+"-"+ti])).map(m=>m.n);
+    state.cfg=c;saveAndReload();
+  });
+  $("#setup-code").addEventListener("click",()=>{$("#setup-codeform").hidden=false;$("#setup-codein").focus();});
+  $("#setup-codeform").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const st=$("#setup-codest"),c=$("#setup-codein").value.trim().toLowerCase().replace(/[\s_—–]+/g,"-").replace(/-+/g,"-");
+    st.classList.add("err");
+    if(!CODE_RE.test(c)){st.textContent="Код выглядит как три слова и четыре цифры через дефис.";return;}
+    st.classList.remove("err");st.textContent="Ищу…";
+    try{
+      const remote=await remoteGet(c);
+      if(!remote){st.classList.add("err");st.textContent="Такого кода нет. Проверь написание.";return;}
+      state=mergeState(state,remote);setCode(c);localSave();
+      if(state.cfg){location.reload();return;}
+      $("#setup-codeform").hidden=true;st.textContent="Код подключён. Осталось ответить на вопросы выше.";renderSync();
+    }catch(err){st.classList.add("err");st.textContent="Не получилось: "+err.message+". Проверь интернет.";}
+  });
+}
+function paintSetup(){
+  document.querySelectorAll("#cfg-level .opt").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.k===setupLevel)));
+  document.querySelectorAll("#cfg-mins .chip").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.m===setupMins)));
+}
+function openSetup(first){
+  const c=state.cfg;
+  setupLevel=c?c.level:"zero";setupMins=c?c.mins:30;
+  $("#cfg-exam").value=c&&c.exam?c.exam:"";$("#cfg-exam").min=iso(NOW);
+  $("#cfg-noexam").checked=!!c&&!c.exam;$("#cfg-exam").disabled=$("#cfg-noexam").checked;
+  $("#setup-h").textContent=first?"Настроим план под тебя":"Настройки плана";
+  $("#setup-sub").textContent=first?"Три вопроса, и план разложится по неделям до твоего экзамена. Всё можно поменять потом в «Настройках».":"План пересчитается под новые ответы. Отметки останутся.";
+  $("#cfg-save").textContent=first?"Построить план":"Сохранить";
+  $("#cfg-cancel").hidden=first;$("#cfg-restart-row").hidden=first;$("#cfg-restart").checked=false;$("#setup-sync").hidden=!first;
+  $("#cfg-err").textContent="";
+  paintSetup();
+  $("#setup").hidden=false;document.body.classList.add("setup-mode");window.scrollTo({top:0,behavior:"instant"});
+}
+function closeSetup(){$("#setup").hidden=true;document.body.classList.remove("setup-mode");}
+/* the plan is laid out once per load, so a new profile saves, syncs and reloads */
+async function saveAndReload(){
+  localSave();
+  if(syncCode){for(let i=0;i<50&&syncBusy;i++)await new Promise(r=>setTimeout(r,100));await sync();}
+  location.reload();
+}
+buildSetup();
+if(!state.cfg)openSetup(true);
 function applyTr(on){document.body.classList.toggle("no-tr",!on);document.querySelectorAll(".trtoggle").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.textContent="Транскрипция: "+(on?"вкл":"выкл");});}
 let showTr=lsGet(KEY+".tr")!=="0";applyTr(showTr);
 document.querySelectorAll(".trtoggle").forEach(b=>b.addEventListener("click",()=>{showTr=!showTr;lsSet(KEY+".tr",showTr?null:"0");applyTr(showTr);}));
@@ -1491,7 +1754,12 @@ async function sync(){
   try{
     const remote=await remoteGet(syncCode);
     const merged=remote?mergeState(state,remote):state;
-    if(stable(merged)!==stable(state)){state=merged;localSave();refreshAll();}
+    if(stable(merged)!==stable(state)){
+      const cfgChanged=stable(merged.cfg||null)!==stable(state.cfg||null);
+      state=merged;localSave();
+      if(cfgChanged){if(!remote||stable(merged)!==stable(remote))await remotePut(syncCode,state);location.reload();return;}
+      refreshAll();
+    }
     if(!remote||stable(merged)!==stable(remote))await remotePut(syncCode,state);
     lastSync=new Date();syncErr=null;
   }catch(e){syncErr=e;}

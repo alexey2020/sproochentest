@@ -841,7 +841,7 @@ const RESOURCES = [
   ["LOD.lu","https://lod.lu","Словарь с озвучкой носителями и спряжением. Все новые слова — только отсюда"],
   ["RTL Lëtzebuerg","https://www.rtl.lu","Новости, подкасты, прогноз погоды, дорожная сводка"],
   ["Radio 100,7","https://www.100komma7.lu","Речь чётче и медленнее коммерческого радио"],
-  ["LLO.lu","https://llo.lu/en","Бесплатные упражнения и тест уровня"]]},
+  ["LLO.lu","https://llo.lu/en","Бесплатный онлайн-курс INL, уровни A1–B2: видео, объяснения, упражнения и тест в каждой теме, тест уровня при регистрации. Есть приложение для iOS и Android. Задание на каждую неделю — в плане"]]},
  {g:"Живая практика", items:[
   ["Курсы INL","https://www.inll.lu/en/languages/luxembourgish/","Запись через MyINL, уровни A1.1 → B1"],
   ["Moien a.s.b.l.","https://moienasbl.lu","Курсы и разговорная практика под Sproochentest"],
@@ -1149,6 +1149,7 @@ function moduleBlock(n,withTitle){
   if(!withTitle){const h=document.createElement("h3");h.textContent="Задачи недели";d.appendChild(h);}
   d.appendChild(taskList(w.tasks,ti=>"w"+n+"-"+ti));
   const rb=rtlWeekBlock(n);if(rb)d.appendChild(rb);
+  const lb=lloWeekBlock(n);if(lb)d.appendChild(lb);
   return d;
 }
 function slotBody(sl){
@@ -1236,7 +1237,7 @@ function buildPlan(){
     out.forEach(m=>host.appendChild(weekDetails("mod-"+m.n,"—",m.t,"",phaseOf(m.n).color,m.tasks.map((_,ti)=>"w"+m.n+"-"+ti),moduleBlock(m.n,false),false)));
   }
   $("#openall").addEventListener("click",e=>{const all=[...document.querySelectorAll("details.week")];const open=all.some(x=>!x.open);all.forEach(x=>x.open=open);e.currentTarget.textContent=open?"Свернуть все недели":"Развернуть все недели";});
-  $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;Object.keys(state.done).filter(k=>!k.startsWith("rtl-")).forEach(k=>setFlag("done",k,false));persist();syncChecks();buildToday();});
+  $("#resetplan").addEventListener("click",()=>{if(!confirm("Снять все отметки плана? Карточки, дни и разборы останутся."))return;Object.keys(state.done).filter(k=>!k.startsWith("rtl-")&&!k.startsWith("llo-")).forEach(k=>setFlag("done",k,false));persist();syncChecks();buildToday();});
   $("#togram").addEventListener("click",()=>select("gram"));
 }
 
@@ -1531,6 +1532,26 @@ const RTL_OTHER = [
 const RTL_PLAN={o1296691:0,o1628374:0, l1:1,b8:1,b9:1,o1455881:1, l9:2,b7:2,b6:2,o1860791:2, l4:3,b1:3,b4:3,o2060293:3, l5:4,b2:4,
   l11:5,b10:5, l14:6,l17:6, l6:7,l7:7,l8:7, l2:8,b3:8,b17:8, l3:9,b14:9,b16:9, l10:10, l15:11,b12:11, l20:12,b5:12, l13:13,l12:13,o1628362:13,
   b13:14,b11:14,b19:14,o2052938:14, l18:15,l16:15,b15:15, l19:16,b18:16, exam:17};
+/* LLO.lu (Léier Lëtzebuergesch Online, INL): a task per plan module, done on weekdays.
+   Marked as done["llo-<module>"]; like RTL lessons it is not part of a week's task count. */
+const LLO_URL="https://llo.lu/en";
+const LLO_WEEK={
+  0:"Зарегистрироваться на LLO.lu (бесплатно, есть приложение для iOS и Android) и пройти тест уровня при регистрации. Тест необязателен — можно сразу начать с A1",
+  1:"Уровень A1: одна тема — видео, объяснение, упражнения, в конце короткий тест",2:"A1: следующая тема по порядку, тест в конце темы",3:"A1: следующая тема по порядку, тест в конце темы",
+  4:"A1: последняя тема недели и повтор тестов, где было меньше 80%",
+  5:"Уровень A2: одна тема — видео, объяснение, упражнения, тест",6:"A2: следующая тема по порядку",7:"A2: следующая тема по порядку",8:"A2: следующая тема по порядку",9:"A2: следующая тема по порядку",
+  10:"Чекпоинт: повторить темы A2, где тест был ниже 80%",
+  11:"A2: тема, близкая к теме недели. Видео сначала без субтитров, потом с ними",12:"A2: тема, близкая к теме недели",13:"A2: любая тема на выбор — лёгкая неделя",
+  14:"B1: видео одной темы — это тренировка аудирования, на экзамене оно уровня B1",15:"B1: видео и упражнения ещё одной темы, только на понимание",16:"B1: видео ещё одной темы без субтитров"
+};
+function lloWeekBlock(n){
+  const t=LLO_WEEK[n];if(!t)return null;
+  const d=document.createElement("div");
+  d.innerHTML='<div class="rtl-sub">LLO.lu · 2–3 раза в будни по 10–15 минут · <a target="_blank" rel="noopener">открыть ↗</a></div>';
+  d.querySelector("a").href=LLO_URL;
+  const ul=document.createElement("ul");ul.className="tasks";const li=document.createElement("li");li.appendChild(chk("llo-"+n,t));ul.appendChild(li);d.appendChild(ul);
+  return d;
+}
 const RTL_ALL=[
   ...RTL_LESSONS.map(([n,u,en,ru,d,a])=>({id:"l"+n,lb:"У"+n,n,u,en,ru,d,a})),
   ...RTL_BASICS.map(([n,u,en,ru,d,a])=>({id:"b"+n,lb:"Г"+n,n,u,en,ru,d,a})),

@@ -219,6 +219,9 @@ def week_view(p: Plan, i: int) -> tuple[str, InlineKeyboardMarkup]:
             for ti, t in enumerate(w["tasks"]):
                 tasks.append((f"w{m}-{ti}", t))
                 lines.append(f"{'✅' if p.done(tasks[-1][0]) else '⬜'} {len(tasks)}. {escape(t)}")
+            llo = DATA["llo"]["weeks"].get(str(m))
+            if llo:
+                lines.append(f"{'✅' if p.done(f'llo-{m}') else '⬜'} 🖥 LLO.lu, 2–3 раза в будни: {escape(llo)}")
     if i == p.cur:
         r = PLAN["routine"][str(p.cfg["mins"])]
         lines += ["", f"⏱ {p.cfg['mins']} мин в день: аудио {r[0]} · карточки {r[1]} · говорение {r[2]} · грамматика {r[3]}"]
@@ -227,6 +230,12 @@ def week_view(p: Plan, i: int) -> tuple[str, InlineKeyboardMarkup]:
     rows: list[list[tuple[str, str]]] = chunk(
         [(f"{'✅' if p.done(k) else '⬜'} {j}", f"tk:{i}:{k}") for j, (k, _) in enumerate(tasks, 1)], 5
     )
+    llo_marks = [
+        (f"{'✅' if p.done(f'llo-{m}') else '⬜'} LLO{'' if len(sl.mods) == 1 else ' ' + MODS[m]['title'][:12]}", f"tk:{i}:llo-{m}")
+        for m in sl.mods
+        if str(m) in DATA["llo"]["weeks"]
+    ]
+    rows += chunk(llo_marks, 2)
     extra = []
     topic = p.week_topic(i)
     if topic:
@@ -246,7 +255,10 @@ def week_view(p: Plan, i: int) -> tuple[str, InlineKeyboardMarkup]:
     if i < n - 1:
         nav.append(("▶️", f"wk:{i + 1}"))
     rows += [nav, [BACK]]
-    return "\n".join(lines), kb(rows)
+    markup = kb(rows)
+    if llo_marks:
+        markup.inline_keyboard.insert(len(markup.inline_keyboard) - 2, [InlineKeyboardButton(text="🖥 Открыть LLO.lu", url=DATA["llo"]["url"])])
+    return "\n".join(lines), markup
 
 
 def plan_view(p: Plan) -> tuple[str, InlineKeyboardMarkup]:

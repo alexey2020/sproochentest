@@ -8,7 +8,7 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 // constants are taken one by one: `const NAME = …;` up to the first ";" that ends a line
 const NAMES = ["PHASES", "MODS", "TOPICS", "QUESTIONS_GENERIC", "RESCUE", "CONNECT", "PHOTO_STEPS", "PHOTO_WORDS",
   "SCENES", "VOCAB", "GRAMS", "QUIZ", "EXAMDAY", "RTL_LESSONS", "RTL_BASICS", "RTL_EXAM", "RTL_OTHER", "RTL_PLAN",
-  "LEVELS", "LEVEL_SKIP", "EXPRESS_MID", "MINS", "ROUTINE", "MODE_NAME", "REVIEW", "LEGACY_CFG", "FB", "CODE_WORDS"];
+  "LEVELS", "LEVEL_SKIP", "EXPRESS_MID", "MINS", "ROUTINE", "MODE_NAME", "REVIEW", "LEGACY_CFG", "FB", "CODE_WORDS", "LLO_URL", "LLO_WEEK"];
 let src = "";
 for (const n of NAMES) {
   const m = html.match(new RegExp("const " + n + "\\s*=\\s*[\\s\\S]*?;\\n"));
@@ -51,6 +51,7 @@ const out = {
   grammar: d.GRAMS.map(g => ({ key: g.k, lb: g.lb, ru: g.ru, why: g.why, rules: g.rules, weeks: g.wk, examples: (g.ex || []).map(pair) })),
   quiz: d.QUIZ.map(q => ({ q: q.q, options: q.o, answer: q.a, explain: q.x })),
   exam_day: d.EXAMDAY,
+  llo: { url: d.LLO_URL, weeks: d.LLO_WEEK },
   rtl: [
     ...d.RTL_LESSONS.map(([n, u, en, ru, dt, a]) => ({ id: "l" + n, kind: "lesson", n, url: u, en, ru, date: dt, audio: a })),
     ...d.RTL_BASICS.map(([n, u, en, ru, dt, a]) => ({ id: "b" + n, kind: "basics", n, url: u, en, ru, date: dt, audio: a })),

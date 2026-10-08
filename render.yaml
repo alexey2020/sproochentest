@@ -12,3 +12,6 @@ services:
         value: "3.12.7"
       - key: BOT_TOKEN
         sync: false
+      # turns a Telegram id into the learner's sync code; must never change once users exist
+      - key: BOT_SECRET
+        generateValue: true
